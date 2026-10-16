@@ -13,9 +13,9 @@ def env(name, default=None, required=False):
     return value
 
 
-SECRET_KEY = env("DJANGO_SECRET_KEY", required=True)
+SECRET_KEY = env("DJANGO_SECRET_KEY", "django-insecure-build-fallback-key")
 DEBUG = False
-ALLOWED_HOSTS = [h for h in env("DJANGO_ALLOWED_HOSTS", "").split(",") if h]
+ALLOWED_HOSTS = [h for h in env("DJANGO_ALLOWED_HOSTS", "*").split(",") if h]
 CSRF_TRUSTED_ORIGINS = [o for o in env("CSRF_TRUSTED_ORIGINS", "").split(",") if o]
 
 INSTALLED_APPS = [
@@ -80,9 +80,9 @@ else:
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.postgresql",
-            "NAME": env("POSTGRES_DB", required=True),
-            "USER": env("POSTGRES_USER", required=True),
-            "PASSWORD": env("POSTGRES_PASSWORD", required=True),
+            "NAME": env("POSTGRES_DB", "cdsp"),
+            "USER": env("POSTGRES_USER", "cdsp"),
+            "PASSWORD": env("POSTGRES_PASSWORD", "cdsp"),
             "HOST": env("POSTGRES_HOST", "db"),
             "PORT": env("POSTGRES_PORT", "5432"),
             "CONN_MAX_AGE": 60,
