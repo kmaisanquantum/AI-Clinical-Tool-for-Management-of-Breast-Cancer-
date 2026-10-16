@@ -1,7 +1,7 @@
 import pytest
 from rest_framework.test import APIClient
+
 from apps.accounts.models import User
-from apps.audit.models import AuditEvent
 from apps.audit.utils import log_audit_event
 
 

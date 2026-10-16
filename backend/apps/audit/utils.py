@@ -7,7 +7,7 @@ def log_audit_event(
     resource_id: str = "",
     user=None,
     request=None,
-    details: dict = None,
+    details: dict | None = None,
 ) -> AuditEvent:
     """
     Utility function to log an audit event for clinical reads and writes.

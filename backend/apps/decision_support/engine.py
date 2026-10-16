@@ -6,8 +6,14 @@ a deterministic triage recommendation payload.
 """
 
 from django.utils import timezone
-from .models import DecisionRule, DecisionSupportAssessment, Guideline, GuidelineVersion, RuleVersion
 
+from .models import (
+    DecisionRule,
+    DecisionSupportAssessment,
+    Guideline,
+    GuidelineVersion,
+    RuleVersion,
+)
 
 PLACEHOLDER_WARNING = "[PLACEHOLDER/UNVALIDATED] Pending clinician review - Breast Cancer Triage Rule."
 
@@ -48,7 +54,7 @@ def evaluate_encounter(encounter) -> dict:
     biomarkers = []
     for hr in histo_reports:
         biomarkers.extend(hr.biomarkers.all())
-    staging_assessments = list(encounter.staging_assessments.all())
+    list(encounter.staging_assessments.all())
 
     # Check Rule 1: Red Flag Clinical Features (Skin changes, ulceration, lymph nodes, nipple retraction)
     red_flag_symptoms = {"skin_changes", "nipple_retraction", "axillary_mass", "skin_tethering", "ulceration"}

@@ -3,7 +3,12 @@ from rest_framework import status, viewsets
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
-from .models import BiomarkerResult, HistopathologyReport, ImagingReport, StagingAssessment
+from .models import (
+    BiomarkerResult,
+    HistopathologyReport,
+    ImagingReport,
+    StagingAssessment,
+)
 from .serializers import (
     BiomarkerResultSerializer,
     HistopathologyReportSerializer,
@@ -13,7 +18,7 @@ from .serializers import (
 
 
 class BaseInvestigationViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     def perform_create(self, serializer):
         if not serializer.validated_data.get("recorded_by") and self.request.user.is_authenticated:

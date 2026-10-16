@@ -3,6 +3,7 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
 from apps.accounts.permissions import HasPatientIdentityPermission
+
 from .models import Patient, PatientIdentity
 from .serializers import PatientIdentitySerializer, PatientSerializer
 
@@ -11,11 +12,11 @@ from .serializers import PatientIdentitySerializer, PatientSerializer
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all().order_by("-created_at")
     serializer_class = PatientSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
 
 @extend_schema(tags=["Registry"])
 class PatientIdentityViewSet(viewsets.ModelViewSet):
     queryset = PatientIdentity.objects.all().order_by("-created_at")
     serializer_class = PatientIdentitySerializer
-    permission_classes = [IsAuthenticated, HasPatientIdentityPermission]
+    permission_classes = (IsAuthenticated, HasPatientIdentityPermission)

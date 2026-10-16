@@ -1,4 +1,5 @@
 from django.db import models
+
 from apps.clinical.models import ClinicalValueBase
 
 
@@ -146,10 +147,10 @@ class BiomarkerResult(ClinicalValueBase):
 
 class StagingAssessment(ClinicalValueBase):
     """Anatomical TNM staging assessment."""
-    T_CHOICES = [("T0", "T0"), ("Tis", "Tis"), ("T1", "T1"), ("T2", "T2"), ("T3", "T3"), ("T4", "T4"), ("TX", "TX")]
-    N_CHOICES = [("N0", "N0"), ("N1", "N1"), ("N2", "N2"), ("N3", "N3"), ("NX", "NX")]
-    M_CHOICES = [("M0", "M0"), ("M1", "M1"), ("MX", "MX")]
-    STAGE_CHOICES = [
+    T_CHOICES = (("T0", "T0"), ("Tis", "Tis"), ("T1", "T1"), ("T2", "T2"), ("T3", "T3"), ("T4", "T4"), ("TX", "TX"))
+    N_CHOICES = (("N0", "N0"), ("N1", "N1"), ("N2", "N2"), ("N3", "N3"), ("NX", "NX"))
+    M_CHOICES = (("M0", "M0"), ("M1", "M1"), ("MX", "MX"))
+    STAGE_CHOICES = (
         ("0", "Stage 0"),
         ("I", "Stage I"),
         ("IIA", "Stage IIA"),
@@ -159,7 +160,7 @@ class StagingAssessment(ClinicalValueBase):
         ("IIIC", "Stage IIIC"),
         ("IV", "Stage IV"),
         ("Unknown", "Unknown"),
-    ]
+    )
 
     encounter = models.ForeignKey(
         "clinical.Encounter",
