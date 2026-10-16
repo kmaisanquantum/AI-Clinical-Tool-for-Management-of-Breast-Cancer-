@@ -10,4 +10,4 @@ clinical-governance, privacy and regulatory review is complete.
     docker compose exec backend pytest -q
 
 API docs: http://127.0.0.1:8000/api/v1/docs/
-See docs/architecture/architecture.md and docs/deployment/vultr.md.
+See docs/architecture/architecture.md, docs/deployment/nixpacks.md and docs/deployment/vultr.md.
