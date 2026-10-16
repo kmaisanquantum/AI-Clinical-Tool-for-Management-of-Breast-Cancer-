@@ -20,7 +20,7 @@ class AuditEventViewSet(
     """
     queryset = AuditEvent.objects.all().order_by("-timestamp")
     serializer_class = AuditEventSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     def perform_create(self, serializer):
         if not serializer.validated_data.get("user") and self.request.user.is_authenticated:

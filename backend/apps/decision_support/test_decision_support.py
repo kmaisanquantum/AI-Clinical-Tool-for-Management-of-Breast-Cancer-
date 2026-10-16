@@ -1,10 +1,19 @@
 import pytest
 from rest_framework.test import APIClient
+
 from apps.accounts.models import User
-from apps.clinical.models import ClinicalAssessment, Encounter, ExaminationFinding, PresentingSymptom
+from apps.clinical.models import (
+    ClinicalAssessment,
+    Encounter,
+    PresentingSymptom,
+)
 from apps.decision_support.engine import evaluate_encounter, seed_example_rules
-from apps.decision_support.models import ClinicianReview, DecisionSupportAssessment
-from apps.investigations.models import BiomarkerResult, HistopathologyReport, ImagingReport
+from apps.decision_support.models import DecisionSupportAssessment
+from apps.investigations.models import (
+    BiomarkerResult,
+    HistopathologyReport,
+    ImagingReport,
+)
 from apps.registry.models import Patient
 
 

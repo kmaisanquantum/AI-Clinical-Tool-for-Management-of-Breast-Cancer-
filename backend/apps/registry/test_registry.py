@@ -1,5 +1,6 @@
 import pytest
 from rest_framework.test import APIClient
+
 from apps.accounts.models import Role, RolePermission, User, UserRole
 from apps.registry.models import Patient, PatientIdentity
 

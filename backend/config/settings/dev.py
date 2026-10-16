@@ -1,4 +1,4 @@
-from .base import *  # noqa
+from .base import *
 from .base import env
 
 DEBUG = env("DJANGO_DEBUG", "1") == "1"

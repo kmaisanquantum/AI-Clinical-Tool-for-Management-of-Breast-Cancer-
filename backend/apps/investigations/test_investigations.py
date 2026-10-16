@@ -1,5 +1,6 @@
 import pytest
 from rest_framework.test import APIClient
+
 from apps.accounts.models import User
 from apps.clinical.models import Encounter
 from apps.investigations.models import (

@@ -4,7 +4,6 @@ from django.db import models
 
 class User(AbstractUser):
     """Custom user model for decision-support platform."""
-    pass
 
 
 class Role(models.Model):

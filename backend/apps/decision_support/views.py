@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.clinical.models import Encounter
+
 from .engine import evaluate_encounter
 from .models import (
     ClinicianReview,
@@ -29,35 +30,35 @@ from .serializers import (
 class GuidelineViewSet(viewsets.ModelViewSet):
     queryset = Guideline.objects.all().order_by("code")
     serializer_class = GuidelineSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
 
 @extend_schema(tags=["Decision Support"])
 class GuidelineVersionViewSet(viewsets.ModelViewSet):
     queryset = GuidelineVersion.objects.all().order_by("-created_at")
     serializer_class = GuidelineVersionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
 
 @extend_schema(tags=["Decision Support"])
 class DecisionRuleViewSet(viewsets.ModelViewSet):
     queryset = DecisionRule.objects.all().order_by("rule_code")
     serializer_class = DecisionRuleSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
 
 @extend_schema(tags=["Decision Support"])
 class RuleVersionViewSet(viewsets.ModelViewSet):
     queryset = RuleVersion.objects.all().order_by("-created_at")
     serializer_class = RuleVersionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
 
 @extend_schema(tags=["Decision Support"])
 class DecisionSupportAssessmentViewSet(viewsets.ModelViewSet):
     queryset = DecisionSupportAssessment.objects.all().order_by("-calculated_at")
     serializer_class = DecisionSupportAssessmentSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     @extend_schema(
         request=EncounterEvaluationRequestSerializer,
@@ -99,7 +100,7 @@ class DecisionSupportAssessmentViewSet(viewsets.ModelViewSet):
 class ClinicianReviewViewSet(viewsets.ModelViewSet):
     queryset = ClinicianReview.objects.all().order_by("-reviewed_at")
     serializer_class = ClinicianReviewSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = (IsAuthenticated,)
 
     def perform_create(self, serializer):
         serializer.save(reviewer=self.request.user)

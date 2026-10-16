@@ -1,5 +1,11 @@
 from rest_framework import serializers
-from .models import BiomarkerResult, HistopathologyReport, ImagingReport, StagingAssessment
+
+from .models import (
+    BiomarkerResult,
+    HistopathologyReport,
+    ImagingReport,
+    StagingAssessment,
+)
 
 
 class BiomarkerResultSerializer(serializers.ModelSerializer):

@@ -20,7 +20,11 @@ from .serializers import (
 
 
 class BaseClinicalViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAuthenticated]
+    """
+    Base viewset for clinical data enforcing no hard deletion of clinical records.
+    Instead of hard deleting, destroy sets status to 'unavailable' or returns 200 with soft delete notice.
+    """
+    permission_classes = (IsAuthenticated,)
 
     def perform_create(self, serializer):
         if not serializer.validated_data.get("recorded_by") and self.request.user.is_authenticated:
