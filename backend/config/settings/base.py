@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+import dj_database_url
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 
@@ -14,6 +16,7 @@ def env(name, default=None, required=False):
 SECRET_KEY = env("DJANGO_SECRET_KEY", required=True)
 DEBUG = False
 ALLOWED_HOSTS = [h for h in env("DJANGO_ALLOWED_HOSTS", "").split(",") if h]
+CSRF_TRUSTED_ORIGINS = [o for o in env("CSRF_TRUSTED_ORIGINS", "").split(",") if o]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -61,7 +64,11 @@ TEMPLATES = [{
 
 WSGI_APPLICATION = "config.wsgi.application"
 
-if env("USE_SQLITE", "0") == "1":
+if env("DATABASE_URL"):
+    DATABASES = {
+        "default": dj_database_url.config(conn_max_age=60)
+    }
+elif env("USE_SQLITE", "0") == "1":
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
