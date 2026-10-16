@@ -13,5 +13,7 @@ staticfiles/
 node_modules/
 *.sql
 *.dump
+*.sqlite3
+db.sqlite3
 backups/
 .DS_Store

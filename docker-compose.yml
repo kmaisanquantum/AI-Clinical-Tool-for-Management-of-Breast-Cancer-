@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
 
   backend:
-    build: ./backend
+    build: .
     env_file: .env
     environment:
       RUN_MIGRATIONS: "1"
@@ -23,7 +23,7 @@ services:
     ports:
       - "127.0.0.1:8000:8000"   # loopback only; Nginx/SSH tunnel in front
     volumes:
-      - ./backend:/app
+      - .:/app
     command: python manage.py runserver 0.0.0.0:8000
     restart: unless-stopped
 
