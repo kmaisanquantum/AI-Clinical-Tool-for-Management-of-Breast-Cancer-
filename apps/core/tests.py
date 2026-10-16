@@ -14,7 +14,7 @@ def test_health_ok(client):
 
 @pytest.mark.django_db
 def test_health_db_failure(client):
-    with patch("django.db.connection.cursor", side_effect=DatabaseError("DB unreachable")):
+    with patch("apps.core.views.connection.cursor", side_effect=DatabaseError("DB unreachable")):
         r = client.get("/api/v1/health/")
         assert r.status_code == 200
         assert r.json() == {"status": "degraded", "database": "unavailable"}
