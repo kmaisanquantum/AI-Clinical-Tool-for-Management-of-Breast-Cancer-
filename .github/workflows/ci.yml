@@ -25,9 +25,6 @@ jobs:
       POSTGRES_USER: cdsp
       POSTGRES_PASSWORD: ci-only-password
       POSTGRES_HOST: localhost
-    defaults:
-      run:
-        working-directory: backend
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
