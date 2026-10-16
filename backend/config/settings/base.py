@@ -25,7 +25,15 @@ INSTALLED_APPS = [
     "rest_framework",
     "drf_spectacular",
     "apps.core",
+    "apps.accounts",
+    "apps.registry",
+    "apps.clinical",
+    "apps.investigations",
+    "apps.decision_support",
+    "apps.audit",
 ]
+
+AUTH_USER_MODEL = "accounts.User"
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
