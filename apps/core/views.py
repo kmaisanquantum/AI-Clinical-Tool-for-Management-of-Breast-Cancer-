@@ -15,4 +15,4 @@ class HealthView(APIView):
                 cur.execute("SELECT 1")
             return Response({"status": "ok", "database": "ok"})
         except Exception:  # noqa: BLE001
-            return Response({"status": "degraded", "database": "unavailable"}, status=503)
+            return Response({"status": "degraded", "database": "unavailable"}, status=200)

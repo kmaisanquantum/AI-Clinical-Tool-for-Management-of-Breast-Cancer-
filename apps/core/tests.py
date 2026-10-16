@@ -1,5 +1,8 @@
+from unittest.mock import patch
+
 import pytest
 from django.conf import settings
+from django.db import DatabaseError
 
 
 @pytest.mark.django_db
@@ -7,6 +10,21 @@ def test_health_ok(client):
     r = client.get("/api/v1/health/")
     assert r.status_code == 200
     assert r.json() == {"status": "ok", "database": "ok"}
+
+
+@pytest.mark.django_db
+def test_health_db_failure(client):
+    with patch("django.db.connection.cursor", side_effect=DatabaseError("DB unreachable")):
+        r = client.get("/api/v1/health/")
+        assert r.status_code == 200
+        assert r.json() == {"status": "degraded", "database": "unavailable"}
+
+
+@pytest.mark.django_db
+def test_root_redirect(client):
+    r = client.get("/")
+    assert r.status_code == 302
+    assert r.headers["Location"] == "/api/v1/docs/"
 
 
 @pytest.mark.django_db

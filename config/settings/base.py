@@ -1,4 +1,5 @@
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -13,7 +14,14 @@ def env(name, default=None, required=False):
     return value
 
 
-SECRET_KEY = env("DJANGO_SECRET_KEY", "django-insecure-build-fallback-key")
+_secret_key = env("DJANGO_SECRET_KEY")
+if not _secret_key:
+    if "collectstatic" in sys.argv:
+        _secret_key = "django-insecure-build-fallback-key"
+    else:
+        raise RuntimeError("DJANGO_SECRET_KEY environment variable is not set.")
+SECRET_KEY = _secret_key
+
 DEBUG = False
 ALLOWED_HOSTS = [h for h in env("DJANGO_ALLOWED_HOSTS", "*").split(",") if h]
 CSRF_TRUSTED_ORIGINS = [o for o in env("CSRF_TRUSTED_ORIGINS", "").split(",") if o]
