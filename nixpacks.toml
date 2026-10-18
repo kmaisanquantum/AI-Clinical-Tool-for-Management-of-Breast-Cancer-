@@ -8,7 +8,7 @@ cmds = ["python -m venv /opt/venv && /opt/venv/bin/pip install --upgrade pip && 
 cmds = ["python manage.py collectstatic --noinput"]
 
 [start]
-cmd = "chmod +x /app/entrypoint.sh && /app/entrypoint.sh gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --access-logfile - --log-level info"
+cmd = "sh entrypoint.sh gunicorn config.wsgi:application --bind 0.0.0.0:${PORT:-8000} --access-logfile - --log-level info"
 
 [variables]
 PYTHONUNBUFFERED = "1"
