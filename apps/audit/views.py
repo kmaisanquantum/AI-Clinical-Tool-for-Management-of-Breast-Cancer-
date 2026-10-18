@@ -20,6 +20,8 @@ class AuditEventViewSet(
     """
     queryset = AuditEvent.objects.all().order_by("-timestamp")
     serializer_class = AuditEventSerializer
+    filterset_fields = ("action", "resource_type", "user")
+    search_fields = ("username_snapshot", "action", "resource_type", "resource_id")
     permission_classes = (IsAuthenticated,)
 
     def perform_create(self, serializer):

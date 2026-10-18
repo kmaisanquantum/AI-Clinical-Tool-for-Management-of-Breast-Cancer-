@@ -17,3 +17,6 @@ node_modules/
 db.sqlite3
 backups/
 .DS_Store
+
+# Local fallback secret and SQLite database (dev/zero-config only)
+.secret_key

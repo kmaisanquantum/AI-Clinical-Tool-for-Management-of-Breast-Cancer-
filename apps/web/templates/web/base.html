@@ -1,0 +1,54 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Clinical Decision Support{% endblock %}</title>
+  <link rel="stylesheet" href="{% static 'web/css/app.css' %}">
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      <span class="brand-mark">BC</span>
+      <div>
+        <strong>Breast Cancer CDS</strong>
+        <small>Clinical Decision Support</small>
+      </div>
+    </div>
+    <nav>
+      <a href="{% url 'web:dashboard' %}" class="{% if section == 'dashboard' %}active{% endif %}">Dashboard</a>
+      <a href="{% url 'web:patients' %}" class="{% if section == 'patients' %}active{% endif %}">Patients</a>
+      <a href="{% url 'web:encounters' %}" class="{% if section == 'encounters' %}active{% endif %}">Encounters</a>
+      <a href="{% url 'web:triage' %}" class="{% if section == 'triage' %}active{% endif %}">Triage</a>
+      <a href="{% url 'web:audit' %}" class="{% if section == 'audit' %}active{% endif %}">Audit log</a>
+      <a href="/api/v1/docs/" target="_blank" rel="noopener">API reference</a>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="signed-in">
+        <span class="avatar" id="user-initial">?</span>
+        <div>
+          <strong id="user-name">&mdash;</strong>
+          <small id="user-roles">Loading&hellip;</small>
+        </div>
+      </div>
+      <form method="post" action="{% url 'web:logout' %}">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-ghost btn-block">Sign out</button>
+      </form>
+    </div>
+  </aside>
+
+  <main class="content">
+    <div class="disclaimer">
+      <strong>Decision support only.</strong> Not a diagnostic device. All rules are
+      placeholders pending clinical validation. Do not use for patient care.
+    </div>
+    {% block content %}{% endblock %}
+  </main>
+</div>
+<script src="{% static 'web/js/api.js' %}"></script>
+<script>CDS.initShell();</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

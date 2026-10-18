@@ -1,0 +1,84 @@
+{% extends "web/base.html" %}
+{% block title %}Patient &middot; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<nav class="crumbs"><a href="{% url 'web:patients' %}">Patients</a> <span>/</span> <span id="crumb">Patient</span></nav>
+
+<header class="page-head">
+  <div>
+    <h1 id="patient-title">Patient</h1>
+    <p class="muted" id="patient-subtitle">Loading&hellip;</p>
+  </div>
+</header>
+
+<div class="two-col">
+  <section class="panel">
+    <h2>Pseudonymous record</h2>
+    <dl class="detail-list" id="patient-detail"></dl>
+  </section>
+
+  <section class="panel" id="identity-panel">
+    <h2>Identifiable information</h2>
+    <div id="identity-body" class="muted">Checking access&hellip;</div>
+  </section>
+</div>
+
+<section class="panel">
+  <h2>Encounters</h2>
+  <table class="data-table">
+    <thead><tr><th>ID</th><th>Type</th><th>Date</th><th>Status</th><th></th></tr></thead>
+    <tbody id="encounter-rows"><tr><td colspan="5" class="muted">Loading&hellip;</td></tr></tbody>
+  </table>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PATIENT_ID = {{ patient_id }};
+
+CDS.requireAuth().then(async (user) => {
+  const patient = await CDS.api(`/api/v1/registry/patients/${PATIENT_ID}/`);
+  document.getElementById("patient-title").textContent = `Patient #${patient.id}`;
+  document.getElementById("patient-subtitle").textContent = `Pseudonym ${patient.pseudonym_id}`;
+  document.getElementById("crumb").textContent = `#${patient.id}`;
+
+  document.getElementById("patient-detail").innerHTML = [
+    CDS.detailRow("ID", patient.id),
+    CDS.detailRow("Pseudonym", `<code>${patient.pseudonym_id}</code>`),
+    CDS.detailRow("Year of birth", patient.year_of_birth ?? "—"),
+    CDS.detailRow("Sex", CDS.sexLabel(patient.sex)),
+    CDS.detailRow("Region", patient.region || "—"),
+    CDS.detailRow("Created", CDS.formatDate(patient.created_at)),
+  ].join("");
+
+  const identityBody = document.getElementById("identity-body");
+  if (!user.can_view_patient_identity) {
+    identityBody.innerHTML =
+      '<div class="locked">Identifiable data requires the <code>view_patient_identity</code> permission.</div>';
+  } else {
+    const identities = await CDS.api(`/api/v1/registry/patient-identities/?patient=${PATIENT_ID}`);
+    if (!identities.length) {
+      identityBody.innerHTML = '<p class="muted">No identity record linked to this patient.</p>';
+    } else {
+      const id = identities[0];
+      identityBody.innerHTML = `<dl class="detail-list">${[
+        CDS.detailRow("Full name", CDS.escape(id.full_name)),
+        CDS.detailRow("MRN", CDS.escape(id.national_id_or_mrn)),
+        CDS.detailRow("Date of birth", id.date_of_birth || "—"),
+        CDS.detailRow("Phone", CDS.escape(id.phone_number) || "—"),
+        CDS.detailRow("Address", CDS.escape(id.address) || "—"),
+      ].join("")}</dl>`;
+    }
+  }
+
+  const encounters = await CDS.api(`/api/v1/clinical/encounters/?patient=${PATIENT_ID}`);
+  CDS.fillTable("#encounter-rows", encounters, (e) => [
+    `#${e.id}`,
+    CDS.titleCase(e.encounter_type),
+    CDS.formatDate(e.encounter_date),
+    CDS.statusPill(e.status),
+    CDS.link(`/encounters/${e.id}/`, "Open"),
+  ]);
+});
+</script>
+{% endblock %}
