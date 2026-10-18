@@ -6,10 +6,12 @@ from .views import (
     DecisionSupportAssessmentViewSet,
     GuidelineVersionViewSet,
     GuidelineViewSet,
+    MolecularSubtypeViewSet,
     RuleVersionViewSet,
 )
 
 router = DefaultRouter()
+router.register(r"molecular-subtypes", MolecularSubtypeViewSet, basename="molecular-subtype")
 router.register(r"guidelines", GuidelineViewSet, basename="guideline")
 router.register(r"guideline-versions", GuidelineVersionViewSet, basename="guideline-version")
 router.register(r"rules", DecisionRuleViewSet, basename="rule")

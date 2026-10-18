@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     "apps.decision_support",
     "apps.audit",
     "apps.web",
+    "apps.ai",
 ]
 
 AUTH_USER_MODEL = "accounts.User"
@@ -190,3 +191,5 @@ LOGGING = {
     "handlers": {"console": {"class": "logging.StreamHandler"}},
     "root": {"handlers": ["console"], "level": "INFO"},
 }
+
+AI_ENABLED = env("AI_ENABLED", "0") == "1"
