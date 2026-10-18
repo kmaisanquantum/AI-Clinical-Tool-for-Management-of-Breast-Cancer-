@@ -11,7 +11,7 @@ ALLOWED_HOSTS = [h for h in env("DJANGO_ALLOWED_HOSTS", "*").split(",") if h]
 # plain HTTP without sending X-Forwarded-Proto.
 SECURE_SSL_REDIRECT = env("DJANGO_SECURE_SSL_REDIRECT", "1") == "1"
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")  # set only behind trusted Nginx
-SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/$"]  # never redirect the internal liveness probe
+SECURE_REDIRECT_EXEMPT = [r"^api/v1/health/?$"]  # never redirect the internal liveness probe
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SECURE_HSTS_SECONDS = 31536000
