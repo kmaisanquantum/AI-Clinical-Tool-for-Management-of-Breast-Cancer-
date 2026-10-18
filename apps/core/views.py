@@ -17,8 +17,10 @@ from apps.investigations.models import BiomarkerResult, ImagingReport, StagingAs
 from apps.registry.models import Patient, PatientIdentity
 
 
+@method_decorator(transaction.non_atomic_requests, name="dispatch")
 class HealthView(APIView):
     """Liveness/readiness probe. Exposes no patient data or version details."""
+
     permission_classes = [AllowAny]
     authentication_classes = []
 
