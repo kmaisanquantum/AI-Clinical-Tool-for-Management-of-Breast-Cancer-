@@ -37,6 +37,7 @@ class GuidelineViewSet(viewsets.ModelViewSet):
 class GuidelineVersionViewSet(viewsets.ModelViewSet):
     queryset = GuidelineVersion.objects.all().order_by("-created_at")
     serializer_class = GuidelineVersionSerializer
+    filterset_fields = ("guideline", "is_active")
     permission_classes = (IsAuthenticated,)
 
 
@@ -51,6 +52,7 @@ class DecisionRuleViewSet(viewsets.ModelViewSet):
 class RuleVersionViewSet(viewsets.ModelViewSet):
     queryset = RuleVersion.objects.all().order_by("-created_at")
     serializer_class = RuleVersionSerializer
+    filterset_fields = ("decision_rule", "status")
     permission_classes = (IsAuthenticated,)
 
 
@@ -59,6 +61,7 @@ class DecisionSupportAssessmentViewSet(viewsets.ModelViewSet):
     queryset = DecisionSupportAssessment.objects.all().order_by("-calculated_at")
     serializer_class = DecisionSupportAssessmentSerializer
     permission_classes = (IsAuthenticated,)
+    filterset_fields = ("encounter", "triage_level")
 
     @extend_schema(
         request=EncounterEvaluationRequestSerializer,
@@ -101,6 +104,7 @@ class ClinicianReviewViewSet(viewsets.ModelViewSet):
     queryset = ClinicianReview.objects.all().order_by("-reviewed_at")
     serializer_class = ClinicianReviewSerializer
     permission_classes = (IsAuthenticated,)
+    filterset_fields = ("assessment", "agree_with_recommendation")
 
     def perform_create(self, serializer):
         serializer.save(reviewer=self.request.user)

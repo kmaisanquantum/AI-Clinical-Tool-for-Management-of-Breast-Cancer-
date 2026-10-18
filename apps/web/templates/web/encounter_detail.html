@@ -1,0 +1,337 @@
+{% extends "web/base.html" %}
+{% block title %}Encounter &middot; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<nav class="crumbs"><a href="{% url 'web:encounters' %}">Encounters</a> <span>/</span> <span id="crumb">Encounter</span></nav>
+
+<header class="page-head">
+  <div>
+    <h1 id="encounter-title">Encounter</h1>
+    <p class="muted" id="encounter-subtitle">Loading&hellip;</p>
+  </div>
+  <button class="btn btn-primary" id="run-triage">Run triage evaluation</button>
+</header>
+
+<div id="triage-result" hidden></div>
+
+<section class="panel">
+  <h2>Assessments</h2>
+  <div id="assessments" class="muted">Loading&hellip;</div>
+  <details class="add-form">
+    <summary>Add assessment</summary>
+    <form id="assessment-form" class="form-grid">
+      <div>
+        <label for="a-type">Assessment type</label>
+        <input type="text" id="a-type" name="assessment_type" value="initial_assessment">
+      </div>
+      <div class="span-2">
+        <label for="a-notes">Summary notes</label>
+        <textarea id="a-notes" name="summary_notes" rows="3"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save assessment</button>
+      </div>
+    </form>
+  </details>
+</section>
+
+<section class="panel">
+  <h2>Imaging reports</h2>
+  <table class="data-table">
+    <thead><tr><th>ID</th><th>Modality</th><th>BI-RADS</th><th>Impression</th><th>Status</th></tr></thead>
+    <tbody id="imaging-rows"><tr><td colspan="5" class="muted">Loading&hellip;</td></tr></tbody>
+  </table>
+  <details class="add-form">
+    <summary>Add imaging report</summary>
+    <form id="imaging-form" class="form-grid">
+      <div>
+        <label for="i-modality">Modality</label>
+        <select id="i-modality" name="modality">
+          <option value="mammogram">Mammogram</option>
+          <option value="ultrasound" selected>Ultrasound</option>
+          <option value="mri">MRI</option>
+        </select>
+      </div>
+      <div>
+        <label for="i-birads">BI-RADS</label>
+        <select id="i-birads" name="birads_category">
+          <option value="0">0 (Incomplete)</option>
+          <option value="1">1 (Negative)</option>
+          <option value="2">2 (Benign)</option>
+          <option value="3">3 (Probably benign)</option>
+          <option value="4">4 (Suspicious)</option>
+          <option value="4a">4a (Low suspicion)</option>
+          <option value="4b">4b (Moderate suspicion)</option>
+          <option value="4c">4c (High suspicion)</option>
+          <option value="5">5 (Highly suggestive)</option>
+          <option value="6">6 (Biopsy-proven)</option>
+        </select>
+      </div>
+      <div class="span-2">
+        <label for="i-impression">Impression</label>
+        <textarea id="i-impression" name="impression" rows="2"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save imaging report</button>
+      </div>
+    </form>
+  </details>
+</section>
+
+<section class="panel">
+  <h2>Histopathology &amp; biomarkers</h2>
+  <div id="histo-list" class="muted">Loading&hellip;</div>
+  <details class="add-form">
+    <summary>Add histopathology report</summary>
+    <form id="histo-form" class="form-grid">
+      <div>
+        <label for="h-specimen">Specimen type</label>
+        <input type="text" id="h-specimen" name="specimen_type" value="core_needle_biopsy">
+      </div>
+      <div>
+        <label for="h-type">Histological type</label>
+        <input type="text" id="h-type" name="histological_type">
+      </div>
+      <div>
+        <label for="h-grade">Grade</label>
+        <select id="h-grade" name="grade">
+          <option value="1">Grade 1</option>
+          <option value="2">Grade 2</option>
+          <option value="3">Grade 3</option>
+          <option value="GX" selected>Cannot be assessed</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save report</button>
+      </div>
+    </form>
+  </details>
+</section>
+
+<section class="panel">
+  <h2>Staging</h2>
+  <table class="data-table">
+    <thead><tr><th>T</th><th>N</th><th>M</th><th>Overall stage</th><th>Status</th></tr></thead>
+    <tbody id="staging-rows"><tr><td colspan="5" class="muted">Loading&hellip;</td></tr></tbody>
+  </table>
+  <details class="add-form">
+    <summary>Add staging assessment</summary>
+    <form id="staging-form" class="form-grid">
+      <div>
+        <label for="s-t">T stage</label>
+        <select id="s-t" name="t_stage">
+          <option>T0</option><option>Tis</option><option>T1</option><option>T2</option>
+          <option>T3</option><option>T4</option><option selected>TX</option>
+        </select>
+      </div>
+      <div>
+        <label for="s-n">N stage</label>
+        <select id="s-n" name="n_stage">
+          <option>N0</option><option>N1</option><option>N2</option><option>N3</option><option selected>NX</option>
+        </select>
+      </div>
+      <div>
+        <label for="s-m">M stage</label>
+        <select id="s-m" name="m_stage">
+          <option>M0</option><option>M1</option><option selected>MX</option>
+        </select>
+      </div>
+      <div>
+        <label for="s-overall">Overall stage</label>
+        <select id="s-overall" name="overall_stage">
+          <option value="0">Stage 0</option><option value="I">Stage I</option>
+          <option value="IIA">Stage IIA</option><option value="IIB">Stage IIB</option>
+          <option value="IIIA">Stage IIIA</option><option value="IIIB">Stage IIIB</option>
+          <option value="IIIC">Stage IIIC</option><option value="IV">Stage IV</option>
+          <option value="Unknown" selected>Unknown</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save staging</button>
+      </div>
+    </form>
+  </details>
+</section>
+
+<section class="panel">
+  <h2>Clinical notes</h2>
+  <div id="notes-list" class="muted">Loading&hellip;</div>
+  <details class="add-form">
+    <summary>Add clinical note</summary>
+    <form id="note-form" class="form-grid">
+      <div>
+        <label for="n-type">Note type</label>
+        <input type="text" id="n-type" name="note_type" value="progress_note">
+      </div>
+      <div class="span-2">
+        <label for="n-content">Content</label>
+        <textarea id="n-content" name="content" rows="3" required></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">Save note</button>
+      </div>
+    </form>
+  </details>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const ENCOUNTER_ID = {{ encounter_id }};
+const Q = `/api/v1/clinical/encounters/${ENCOUNTER_ID}/`;
+
+async function refresh() {
+  const enc = await CDS.api(Q);
+  document.getElementById("encounter-title").textContent = `Encounter #${enc.id}`;
+  document.getElementById("encounter-subtitle").textContent =
+    `${CDS.titleCase(enc.encounter_type)} · ${CDS.formatDate(enc.encounter_date)} · Patient ${enc.patient}`;
+  document.getElementById("crumb").textContent = `#${enc.id}`;
+
+  document.getElementById("assessments").innerHTML = enc.assessments.length
+    ? enc.assessments.map((a) => `
+        <div class="card">
+          <div class="card-head"><strong>${CDS.escape(a.assessment_type)}</strong>${CDS.statusPill(a.status)}</div>
+          <p>${CDS.escape(a.summary_notes) || '<span class="muted">No summary</span>'}</p>
+          <div class="chip-row">
+            ${a.presenting_symptoms.map((s) => `<span class="chip">${CDS.escape(s.symptom_type)}</span>`).join("")}
+            ${a.examination_findings.map((f) => `<span class="chip">${CDS.escape(f.finding_type)}: ${CDS.escape(f.finding_value)}</span>`).join("")}
+          </div>
+        </div>`).join("")
+    : '<p class="muted">No assessments recorded.</p>';
+
+  document.getElementById("notes-list").innerHTML = enc.notes.length
+    ? enc.notes.map((n) => `
+        <div class="card">
+          <div class="card-head"><strong>${CDS.escape(n.note_type)}</strong>${CDS.statusPill(n.status)}</div>
+          <p>${CDS.escape(n.content)}</p>
+        </div>`).join("")
+    : '<p class="muted">No notes recorded.</p>';
+
+  const [imaging, histo, staging] = await Promise.all([
+    CDS.api(`/api/v1/investigations/imaging-reports/?encounter=${ENCOUNTER_ID}`),
+    CDS.api(`/api/v1/investigations/histopathology-reports/?encounter=${ENCOUNTER_ID}`),
+    CDS.api(`/api/v1/investigations/staging-assessments/?encounter=${ENCOUNTER_ID}`),
+  ]);
+
+  CDS.fillTable("#imaging-rows", imaging, (i) => [
+    `#${i.id}`, CDS.titleCase(i.modality), `BI-RADS ${i.birads_category}`,
+    CDS.escape(i.impression) || "—", CDS.statusPill(i.status),
+  ]);
+
+  CDS.fillTable("#staging-rows", staging, (s) => [
+    s.t_stage, s.n_stage, s.m_stage, s.overall_stage, CDS.statusPill(s.status),
+  ]);
+
+  document.getElementById("histo-list").innerHTML = histo.length
+    ? histo.map((h) => `
+        <div class="card">
+          <div class="card-head"><strong>${CDS.escape(h.specimen_type)}</strong>${CDS.statusPill(h.status)}</div>
+          <p class="muted">${CDS.escape(h.histological_type) || "Type not specified"} · Grade ${h.grade}</p>
+          ${h.biomarkers.map((b) => `
+            <div class="biomarker-row">
+              <span class="chip">ER: ${b.er_status}</span>
+              <span class="chip">PR: ${b.pr_status}</span>
+              <span class="chip">HER2: ${b.her2_status}</span>
+              ${b.ki67_index !== null ? `<span class="chip">Ki-67: ${b.ki67_index}%</span>` : ""}
+              ${b.molecular_subtype ? `<span class="chip chip-accent">${CDS.escape(b.molecular_subtype)}</span>` : ""}
+            </div>`).join("")}
+        </div>`).join("")
+    : '<p class="muted">No histopathology reports recorded.</p>';
+}
+
+function post(path, body, form) {
+  return CDS.api(path, { method: "POST", body }).then(() => {
+    if (form) form.reset();
+    return refresh();
+  });
+}
+
+CDS.requireAuth().then(async () => {
+  await refresh();
+
+  document.getElementById("assessment-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    post("/api/v1/clinical/assessments/", {
+      encounter: ENCOUNTER_ID,
+      assessment_type: f.get("assessment_type"),
+      summary_notes: f.get("summary_notes"),
+    }, e.target);
+  });
+
+  document.getElementById("imaging-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    post("/api/v1/investigations/imaging-reports/", {
+      encounter: ENCOUNTER_ID,
+      modality: f.get("modality"),
+      birads_category: f.get("birads_category"),
+      impression: f.get("impression"),
+    }, e.target);
+  });
+
+  document.getElementById("histo-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    post("/api/v1/investigations/histopathology-reports/", {
+      encounter: ENCOUNTER_ID,
+      specimen_type: f.get("specimen_type"),
+      histological_type: f.get("histological_type"),
+      grade: f.get("grade"),
+    }, e.target);
+  });
+
+  document.getElementById("staging-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    post("/api/v1/investigations/staging-assessments/", {
+      encounter: ENCOUNTER_ID,
+      t_stage: f.get("t_stage"), n_stage: f.get("n_stage"),
+      m_stage: f.get("m_stage"), overall_stage: f.get("overall_stage"),
+    }, e.target);
+  });
+
+  document.getElementById("note-form").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const f = new FormData(e.target);
+    post("/api/v1/clinical/notes/", {
+      encounter: ENCOUNTER_ID,
+      note_type: f.get("note_type"),
+      content: f.get("content"),
+    }, e.target);
+  });
+
+  document.getElementById("run-triage").addEventListener("click", async () => {
+    const box = document.getElementById("triage-result");
+    box.hidden = false;
+    box.innerHTML = '<div class="alert">Running deterministic rules engine&hellip;</div>';
+    try {
+      const result = await CDS.api("/api/v1/decision-support/assessments/evaluate/", {
+        method: "POST",
+        body: { encounter_id: ENCOUNTER_ID },
+      });
+      const triggers = result.reasoning_payload.triggers || [];
+      box.innerHTML = `
+        <div class="triage-banner triage-${result.triage_level.toLowerCase()}">
+          <div>
+            <span class="pill pill-${result.triage_level.toLowerCase()}">${result.triage_level}</span>
+            <h2>Assessment #${result.id}</h2>
+          </div>
+          <p>${CDS.escape(result.summary_recommendation)}</p>
+        </div>
+        <div class="panel">
+          <h2>Matched criteria</h2>
+          ${triggers.map((t) => `
+            <div class="card">
+              <div class="card-head"><strong>${CDS.escape(t.rule_code)}</strong></div>
+              <p>${CDS.escape(t.message)}</p>
+              ${t.details.length ? `<ul>${t.details.map((d) => `<li>${CDS.escape(d)}</li>`).join("")}</ul>` : ""}
+            </div>`).join("")}
+        </div>`;
+    } catch (err) {
+      box.innerHTML = `<div class="alert alert-error">${CDS.errorMessage(err)}</div>`;
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,95 @@
+{% extends "web/base.html" %}
+{% block title %}Dashboard &middot; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Dashboard</h1>
+    <p class="muted">Overview of registry activity and triage workload.</p>
+  </div>
+  <a class="btn btn-primary" href="{% url 'web:triage' %}">Run triage evaluation</a>
+</header>
+
+<section class="stat-grid" id="stat-grid">
+  <div class="stat-card"><span class="stat-label">Patients</span><span class="stat-value" data-stat="patients">&mdash;</span></div>
+  <div class="stat-card"><span class="stat-label">Encounters</span><span class="stat-value" data-stat="encounters">&mdash;</span></div>
+  <div class="stat-card"><span class="stat-label">Imaging reports</span><span class="stat-value" data-stat="imaging_reports">&mdash;</span></div>
+  <div class="stat-card"><span class="stat-label">Biomarker results</span><span class="stat-value" data-stat="biomarker_results">&mdash;</span></div>
+  <div class="stat-card"><span class="stat-label">Staging assessments</span><span class="stat-value" data-stat="staging_assessments">&mdash;</span></div>
+  <div class="stat-card"><span class="stat-label">Active rules</span><span class="stat-value" data-stat="active_rule_versions">&mdash;</span></div>
+</section>
+
+<section class="panel">
+  <h2>Triage distribution</h2>
+  <div class="triage-bars" id="triage-bars">
+    <div class="triage-row">
+      <span class="pill pill-urgent">URGENT</span>
+      <div class="bar"><div class="bar-fill bar-urgent" data-bar="URGENT" style="width:0%"></div></div>
+      <span class="bar-count" data-count="URGENT">0</span>
+    </div>
+    <div class="triage-row">
+      <span class="pill pill-priority">PRIORITY</span>
+      <div class="bar"><div class="bar-fill bar-priority" data-bar="PRIORITY" style="width:0%"></div></div>
+      <span class="bar-count" data-count="PRIORITY">0</span>
+    </div>
+    <div class="triage-row">
+      <span class="pill pill-routine">ROUTINE</span>
+      <div class="bar"><div class="bar-fill bar-routine" data-bar="ROUTINE" style="width:0%"></div></div>
+      <span class="bar-count" data-count="ROUTINE">0</span>
+    </div>
+  </div>
+</section>
+
+<div class="two-col">
+  <section class="panel">
+    <h2>Recent encounters</h2>
+    <table class="data-table">
+      <thead><tr><th>ID</th><th>Patient</th><th>Type</th><th>Date</th></tr></thead>
+      <tbody id="recent-encounters"><tr><td colspan="4" class="muted">Loading&hellip;</td></tr></tbody>
+    </table>
+  </section>
+
+  <section class="panel">
+    <h2>Recent triage assessments</h2>
+    <table class="data-table">
+      <thead><tr><th>ID</th><th>Encounter</th><th>Triage</th><th>Calculated</th></tr></thead>
+      <tbody id="recent-assessments"><tr><td colspan="4" class="muted">Loading&hellip;</td></tr></tbody>
+    </table>
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+CDS.requireAuth().then(async (user) => {
+  const data = await CDS.api("/api/v1/dashboard/summary/");
+
+  for (const [key, value] of Object.entries(data.counts)) {
+    const el = document.querySelector(`[data-stat="${key}"]`);
+    if (el) el.textContent = value;
+  }
+
+  const max = Math.max(1, ...Object.values(data.triage));
+  for (const [level, value] of Object.entries(data.triage)) {
+    const bar = document.querySelector(`[data-bar="${level}"]`);
+    const count = document.querySelector(`[data-count="${level}"]`);
+    if (bar) bar.style.width = `${Math.round((value / max) * 100)}%`;
+    if (count) count.textContent = value;
+  }
+
+  CDS.fillTable("#recent-encounters", data.recent_encounters, (e) => [
+    CDS.link(`/encounters/${e.id}/`, `#${e.id}`),
+    CDS.link(`/patients/${e.patient}/`, `Patient ${e.patient}`),
+    CDS.titleCase(e.encounter_type),
+    CDS.formatDate(e.encounter_date),
+  ]);
+
+  CDS.fillTable("#recent-assessments", data.recent_assessments, (a) => [
+    `#${a.id}`,
+    CDS.link(`/encounters/${a.encounter}/`, `Encounter ${a.encounter}`),
+    CDS.triagePill(a.triage_level),
+    CDS.formatDate(a.calculated_at),
+  ]);
+});
+</script>
+{% endblock %}

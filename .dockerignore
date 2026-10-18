@@ -18,3 +18,4 @@ node_modules/
 db.sqlite3
 backups/
 .DS_Store
+.secret_key

@@ -14,14 +14,22 @@ through `entrypoint.sh` and serves the API with Gunicorn.
 
 ## 2. Environment variables
 
-Set these in the Coolify application (not in a committed `.env`):
+The image boots with **no environment variables at all**: it generates and
+persists a secret key, defaults to SQLite, and runs migrations on startup. That
+makes it safe against the restart loop, but for a real deployment set these in
+the Coolify application (not in a committed `.env`):
 
     DJANGO_SETTINGS_MODULE=config.settings.prod
     DJANGO_SECRET_KEY=<50+ random chars>
     DJANGO_ALLOWED_HOSTS=dspng.space,www.dspng.space
     CSRF_TRUSTED_ORIGINS=https://dspng.space,https://www.dspng.space
-    RUN_MIGRATIONS=1
     PORT=8000
+
+Optional:
+
+    RUN_MIGRATIONS=1        # default 1; set 0 to skip migrations on startup
+    SEED_DEMO_DATA=1        # load demo users/data on first boot
+    DJANGO_SECURE_SSL_REDIRECT=0   # only if the probe sends no X-Forwarded-Proto
 
 Generate a key with:
 
@@ -29,6 +37,8 @@ Generate a key with:
 
 Add a PostgreSQL database in Coolify and expose its connection URL as
 `DATABASE_URL` (Coolify provides this automatically when you link the database).
+Without `DATABASE_URL` or `POSTGRES_HOST` the app uses SQLite, which is fine for
+a demo but not for multi-replica or production use.
 
 ## 3. Health check
 
@@ -49,6 +59,10 @@ edge proxy to terminate TLS.
 
 ## Common failures
 
+- **Container restarts in a loop / `Worker failed to boot`** - `DJANGO_SECRET_KEY`
+  was unset and older revisions raised on boot. Current code generates and
+  persists a key instead of crashing; set `DJANGO_SECRET_KEY` to control it
+  explicitly, or `DJANGO_SECRET_KEY_REQUIRED=1` to restore the hard failure.
 - **`exec: "/app/entrypoint.sh": permission denied`** - the entrypoint lost its
   executable bit. Keep `entrypoint.sh` mode `100755` in git; the Dockerfile also
   runs `chmod +x` as a safety net.

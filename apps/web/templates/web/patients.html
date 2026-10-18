@@ -1,0 +1,115 @@
+{% extends "web/base.html" %}
+{% block title %}Patients &middot; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Patients</h1>
+    <p class="muted">Pseudonymous registry records. Identifiable data is held separately and permission-gated.</p>
+  </div>
+  <button class="btn btn-primary" id="new-patient">New patient</button>
+</header>
+
+<section class="panel" id="new-patient-panel" hidden>
+  <h2>Register patient</h2>
+  <form id="patient-form" class="form-grid">
+    <div>
+      <label for="p-yob">Year of birth</label>
+      <input type="number" id="p-yob" name="year_of_birth" min="1900" max="2100">
+    </div>
+    <div>
+      <label for="p-sex">Sex</label>
+      <select id="p-sex" name="sex">
+        <option value="F">Female</option>
+        <option value="M">Male</option>
+        <option value="O">Other</option>
+        <option value="U" selected>Unknown</option>
+      </select>
+    </div>
+    <div>
+      <label for="p-region">Region</label>
+      <input type="text" id="p-region" name="region" maxlength="100">
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save patient</button>
+      <button type="button" class="btn btn-ghost" id="cancel-patient">Cancel</button>
+    </div>
+  </form>
+  <div class="alert alert-error" id="patient-error" hidden></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>Registry</h2>
+    <input type="search" id="patient-search" class="search" placeholder="Filter by pseudonym, region&hellip;">
+  </div>
+  <table class="data-table" id="patient-table">
+    <thead>
+      <tr><th>ID</th><th>Pseudonym</th><th>Year of birth</th><th>Sex</th><th>Region</th><th>Created</th></tr>
+    </thead>
+    <tbody><tr><td colspan="6" class="muted">Loading&hellip;</td></tr></tbody>
+  </table>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allPatients = [];
+
+function renderPatients(filter = "") {
+  const needle = filter.trim().toLowerCase();
+  const rows = allPatients.filter((p) =>
+    !needle ||
+    p.pseudonym_id.toLowerCase().includes(needle) ||
+    (p.region || "").toLowerCase().includes(needle)
+  );
+  CDS.fillTable("#patient-table tbody", rows, (p) => [
+    CDS.link(`/patients/${p.id}/`, `#${p.id}`),
+    `<code>${p.pseudonym_id.slice(0, 8)}&hellip;</code>`,
+    p.year_of_birth ?? "—",
+    CDS.sexLabel(p.sex),
+    p.region || "—",
+    CDS.formatDate(p.created_at),
+  ]);
+}
+
+CDS.requireAuth().then(async () => {
+  allPatients = await CDS.api("/api/v1/registry/patients/");
+  renderPatients();
+
+  document.getElementById("patient-search").addEventListener("input", (e) => {
+    renderPatients(e.target.value);
+  });
+
+  const panel = document.getElementById("new-patient-panel");
+  document.getElementById("new-patient").addEventListener("click", () => {
+    panel.hidden = !panel.hidden;
+  });
+  document.getElementById("cancel-patient").addEventListener("click", () => {
+    panel.hidden = true;
+  });
+
+  document.getElementById("patient-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const error = document.getElementById("patient-error");
+    error.hidden = true;
+    const form = new FormData(e.target);
+    const body = {
+      sex: form.get("sex"),
+      region: form.get("region") || "",
+      year_of_birth: form.get("year_of_birth") ? Number(form.get("year_of_birth")) : null,
+    };
+    try {
+      const created = await CDS.api("/api/v1/registry/patients/", { method: "POST", body });
+      allPatients.unshift(created);
+      renderPatients(document.getElementById("patient-search").value);
+      e.target.reset();
+      panel.hidden = true;
+    } catch (err) {
+      error.textContent = CDS.errorMessage(err);
+      error.hidden = false;
+    }
+  });
+});
+</script>
+{% endblock %}

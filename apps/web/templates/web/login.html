@@ -1,0 +1,43 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in &middot; Breast Cancer CDS</title>
+  <link rel="stylesheet" href="{% static 'web/css/app.css' %}">
+</head>
+<body class="login-body">
+  <div class="login-card">
+    <div class="brand brand-stacked">
+      <span class="brand-mark">BC</span>
+      <div>
+        <strong>Breast Cancer CDS</strong>
+        <small>Clinical Decision Support</small>
+      </div>
+    </div>
+
+    <h1>Sign in</h1>
+    <p class="muted">Access is restricted to authorised clinical staff.</p>
+
+    {% if form.errors %}
+      <div class="alert alert-error">Your username and password did not match. Please try again.</div>
+    {% endif %}
+
+    <form method="post" action="{% url 'web:login' %}">
+      {% csrf_token %}
+      <label for="id_username">Username</label>
+      <input type="text" name="username" id="id_username" autocomplete="username" autofocus required>
+
+      <label for="id_password">Password</label>
+      <input type="password" name="password" id="id_password" autocomplete="current-password" required>
+
+      <input type="hidden" name="next" value="{{ next }}">
+      <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+    </form>
+
+    <p class="login-foot muted">
+      Decision support only. Not a diagnostic device.
+    </p>
+  </div>
+</body>
+</html>
