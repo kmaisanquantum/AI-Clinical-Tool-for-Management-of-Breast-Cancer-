@@ -46,3 +46,19 @@ def test_accounts_api_authenticated(api_client, normal_user):
     res = api_client.get("/api/v1/accounts/users/")
     assert res.status_code == 200
     assert len(res.json()) >= 1
+
+
+@pytest.mark.django_db
+def test_create_demo_user_command_idempotent_and_authenticates(client):
+    from django.core.management import call_command
+
+    # Run twice to test idempotence
+    call_command("create_demo_user", username="doctor", password="doctor", role="Oncologist")
+    call_command("create_demo_user", username="doctor", password="doctor", role="Oncologist")
+
+    user = User.objects.get(username="doctor")
+    assert user.check_password("doctor")
+    assert UserRole.objects.filter(user=user, role__name="Oncologist").exists()
+
+    login_success = client.login(username="doctor", password="doctor")
+    assert login_success is True
