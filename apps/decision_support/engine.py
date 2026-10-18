@@ -18,16 +18,55 @@ from .models import (
 PLACEHOLDER_WARNING = "[PLACEHOLDER/UNVALIDATED] Pending clinician review - Breast Cancer Triage Rule."
 
 
+def determine_molecular_subtype(biomarkers) -> str:
+    """
+    Computes molecular subtype classification from BiomarkerResult objects:
+    - Luminal A: ER+ and/or PR+, HER2-, low Ki-67 (<20%)
+    - Luminal B: ER+ and/or PR+, HER2+ OR high Ki-67 (>=20%)
+    - HER2-enriched: ER-, PR-, HER2+
+    - Triple-negative: ER-, PR-, HER2-
+    Returns 'Incomplete' if key biomarker fields are missing/pending.
+    """
+    if not biomarkers:
+        return "Incomplete"
+
+    bm = biomarkers[0] if isinstance(biomarkers, list) else biomarkers
+    er = getattr(bm, "er_status", None)
+    pr = getattr(bm, "pr_status", None)
+    her2 = getattr(bm, "her2_status", None)
+    ki67 = getattr(bm, "ki67_index", None)
+
+    if not er or not pr or not her2 or er in ("pending", "") or pr in ("pending", "") or her2 in ("pending", ""):
+        return "Incomplete"
+
+    er_pos = er == "positive"
+    pr_pos = pr == "positive"
+    her2_pos = her2 in ("positive", "3+")
+    her2_neg = her2 in ("negative", "0", "1+")
+
+    if er_pos or pr_pos:
+        if her2_pos:
+            return "Luminal B"
+        if her2_neg:
+            if ki67 is not None and ki67 >= 20:
+                return "Luminal B"
+            return "Luminal A"
+        return "Luminal B"
+
+    if not er_pos and not pr_pos and er == "negative" and pr == "negative":
+        if her2_pos:
+            return "HER2-enriched"
+        if her2_neg:
+            return "Triple-negative"
+
+    return "Unclassified"
+
+
 def evaluate_encounter(encounter) -> dict:
     """
     Evaluates encounter data (symptoms, findings, imaging, biomarkers, staging)
-    and returns a structured triage recommendation dictionary:
-    {
-        'triage_level': 'URGENT' | 'PRIORITY' | 'ROUTINE',
-        'summary_recommendation': str,
-        'matched_rule_versions': list of RuleVersion objects,
-        'reasoning_payload': dict,
-    }
+    and returns a structured triage recommendation dictionary including molecular subtype,
+    management plan, and referral recommendation.
     """
     matched_rule_versions = []
     triggers = []
@@ -54,18 +93,21 @@ def evaluate_encounter(encounter) -> dict:
     biomarkers = []
     for hr in histo_reports:
         biomarkers.extend(hr.biomarkers.all())
-    list(encounter.staging_assessments.all())
+    staging_assessments = list(encounter.staging_assessments.all())
 
-    # Check Rule 1: Red Flag Clinical Features (Skin changes, ulceration, lymph nodes, nipple retraction)
+    # Molecular Subtype Classification
+    molecular_subtype = determine_molecular_subtype(biomarkers) if biomarkers else "Incomplete"
+
+    # Rule 1: Red Flag Clinical Features
     red_flag_symptoms = {"skin_changes", "nipple_retraction", "axillary_mass", "skin_tethering", "ulceration"}
     found_red_flags = []
 
     for sym in symptoms:
-        if sym.status == "recorded" and sym.symptom_type.lower() in red_flag_symptoms:
+        if getattr(sym, "status", "recorded") == "recorded" and sym.symptom_type.lower() in red_flag_symptoms:
             found_red_flags.append(f"Symptom: {sym.symptom_type}")
 
     for find in findings:
-        if find.status == "recorded" and find.finding_type.lower() in red_flag_symptoms:
+        if getattr(find, "status", "recorded") == "recorded" and find.finding_type.lower() in red_flag_symptoms:
             found_red_flags.append(f"Finding: {find.finding_type}={find.finding_value}")
 
     if found_red_flags:
@@ -79,12 +121,19 @@ def evaluate_encounter(encounter) -> dict:
         if "RULE_RED_FLAG_SYMPTOMS" in rule_map:
             matched_rule_versions.append(rule_map["RULE_RED_FLAG_SYMPTOMS"])
 
-    # Check Rule 2: BI-RADS 4, 5, or 6 Imaging Finding
+    # Rule 2: BI-RADS 4, 5, or 6 Imaging Finding
     suspicious_birads = {"4", "4a", "4b", "4c", "5", "6"}
     found_birads = []
+    has_confirmed_or_suspicious_malignancy = False
+
     for img in imaging_reports:
-        if img.status == "recorded" and img.birads_category in suspicious_birads:
+        if getattr(img, "status", "recorded") == "recorded" and img.birads_category in suspicious_birads:
             found_birads.append(f"{img.modality.upper()} BI-RADS {img.birads_category}")
+            if img.birads_category in ("5", "6"):
+                has_confirmed_or_suspicious_malignancy = True
+
+    if histo_reports:
+        has_confirmed_or_suspicious_malignancy = True
 
     if found_birads:
         triage_level = DecisionSupportAssessment.TRIAGE_URGENT
@@ -97,40 +146,78 @@ def evaluate_encounter(encounter) -> dict:
         if "RULE_BIRADS_4_5_SUSPICIOUS" in rule_map:
             matched_rule_versions.append(rule_map["RULE_BIRADS_4_5_SUSPICIOUS"])
 
-    # Check Rule 3: High-Risk Biomarker Phenotype (Triple-Negative, HER2+, high Ki-67)
-    found_biomarkers = []
-    for bm in biomarkers:
-        if bm.status == "recorded":
-            is_tnbc = (
-                bm.er_status == "negative"
-                and bm.pr_status == "negative"
-                and bm.her2_status in ("negative", "0", "1+")
-            )
-            is_her2_pos = bm.her2_status in ("positive", "3+")
-            high_ki67 = bm.ki67_index is not None and bm.ki67_index >= 30
+    # Rule 3: High-Risk Biomarker Phenotype / Subtype Rules
+    if molecular_subtype in ("Triple-negative", "HER2-enriched", "Luminal B"):
+        if molecular_subtype in ("Triple-negative", "HER2-enriched"):
+            triage_level = DecisionSupportAssessment.TRIAGE_URGENT
+        elif triage_level == DecisionSupportAssessment.TRIAGE_ROUTINE:
+            triage_level = DecisionSupportAssessment.TRIAGE_PRIORITY
 
-            if is_tnbc:
-                found_biomarkers.append("Triple-Negative Breast Cancer phenotype")
-            if is_her2_pos:
-                found_biomarkers.append("HER2-positive phenotype")
-            if high_ki67:
-                found_biomarkers.append(f"High Ki-67 proliferation index ({bm.ki67_index}%)")
-
-    if found_biomarkers:
-        triage_level = DecisionSupportAssessment.TRIAGE_URGENT
         triggers.append({
             "rule_code": "RULE_HIGH_RISK_BIOMARKER",
-            "message": "Aggressive molecular biomarker profile requiring urgent MDT review",
-            "details": found_biomarkers,
+            "message": f"Molecular subtype identified: {molecular_subtype}",
+            "details": [f"Molecular profile: {molecular_subtype}"],
             "notice": PLACEHOLDER_WARNING,
         })
         if "RULE_HIGH_RISK_BIOMARKER" in rule_map:
             matched_rule_versions.append(rule_map["RULE_HIGH_RISK_BIOMARKER"])
 
-    # Check Rule 4: Palpable Mass in Woman Age >= 40
-    if triage_level != DecisionSupportAssessment.TRIAGE_URGENT:
-        has_lump = any(s.symptom_type.lower() == "breast_lump" and s.status == "recorded" for s in symptoms) or \
-                   any(f.finding_type.lower() == "mass" and f.status == "recorded" for f in findings)
+    # Rule 4: Stage-Aware Escalation Rules
+    for stg in staging_assessments:
+        overall = getattr(stg, "overall_stage", "")
+        m_stage = getattr(stg, "m_stage", "")
+        t_stage = getattr(stg, "t_stage", "")
+        n_stage = getattr(stg, "n_stage", "")
+
+        if overall == "IV" or m_stage == "M1":
+            triage_level = DecisionSupportAssessment.TRIAGE_URGENT
+            triggers.append({
+                "rule_code": "RULE_STAGE_IV_PALLIATIVE",
+                "message": "Stage IV / Metastatic disease — urgent MDT review, palliative care & systemic therapy consultation.",
+                "details": [f"Stage: {overall}, M-stage: {m_stage}"],
+                "notice": PLACEHOLDER_WARNING,
+            })
+            if "RULE_STAGE_IV_PALLIATIVE" in rule_map:
+                matched_rule_versions.append(rule_map["RULE_STAGE_IV_PALLIATIVE"])
+        elif t_stage == "T4" or n_stage in ("N2", "N3") or overall in ("IIIA", "IIIB", "IIIC"):
+            triage_level = DecisionSupportAssessment.TRIAGE_URGENT
+            triggers.append({
+                "rule_code": "RULE_LOCALLY_ADVANCED",
+                "message": "Locally advanced breast cancer — urgent neoadjuvant MDT review & staging.",
+                "details": [f"Stage: {overall}, T: {t_stage}, N: {n_stage}"],
+                "notice": PLACEHOLDER_WARNING,
+            })
+            if "RULE_LOCALLY_ADVANCED" in rule_map:
+                matched_rule_versions.append(rule_map["RULE_LOCALLY_ADVANCED"])
+        elif overall in ("I", "IIA", "IIB") or t_stage in ("T1", "T2"):
+            if triage_level == DecisionSupportAssessment.TRIAGE_ROUTINE:
+                triage_level = DecisionSupportAssessment.TRIAGE_PRIORITY
+            triggers.append({
+                "rule_code": "RULE_EARLY_STAGE",
+                "message": "Early-stage breast cancer — priority surgical review & curative intent pathway.",
+                "details": [f"Stage: {overall}"],
+                "notice": PLACEHOLDER_WARNING,
+            })
+            if "RULE_EARLY_STAGE" in rule_map:
+                matched_rule_versions.append(rule_map["RULE_EARLY_STAGE"])
+
+    # Rule 5: Missing-Data Safety Rule (Biomarker Incomplete)
+    if has_confirmed_or_suspicious_malignancy and molecular_subtype in ("Incomplete", "Unclassified", ""):
+        if triage_level == DecisionSupportAssessment.TRIAGE_ROUTINE:
+            triage_level = DecisionSupportAssessment.TRIAGE_PRIORITY
+        triggers.append({
+            "rule_code": "RULE_INCOMPLETE_BIOMARKER",
+            "message": "Biomarker assessment incomplete — order IHC (ER/PR/HER2/Ki67) or repeat biopsy",
+            "details": ["Confirmed or highly suspicious malignancy with incomplete molecular biomarkers."],
+            "notice": PLACEHOLDER_WARNING,
+        })
+        if "RULE_INCOMPLETE_BIOMARKER" in rule_map:
+            matched_rule_versions.append(rule_map["RULE_INCOMPLETE_BIOMARKER"])
+
+    # Rule 6: Palpable Mass in Woman Age >= 40
+    if triage_level == DecisionSupportAssessment.TRIAGE_ROUTINE:
+        has_lump = any(s.symptom_type.lower() == "breast_lump" and getattr(s, "status", "recorded") == "recorded" for s in symptoms) or \
+                   any(f.finding_type.lower() == "mass" and getattr(f, "status", "recorded") == "recorded" for f in findings)
         patient = encounter.patient
         age_over_40 = patient.year_of_birth and (timezone.now().year - patient.year_of_birth >= 40)
 
@@ -145,38 +232,57 @@ def evaluate_encounter(encounter) -> dict:
             if "RULE_PALPABLE_MASS_AGE_40" in rule_map:
                 matched_rule_versions.append(rule_map["RULE_PALPABLE_MASS_AGE_40"])
 
-    # Check Rule 5: Cyclical Pain / Routine Follow-Up
+    # Default Routine Rule if no triggers
     if not triggers:
-        has_pain = any(s.symptom_type.lower() == "breast_pain" and s.status == "recorded" for s in symptoms)
-        if has_pain:
-            triggers.append({
-                "rule_code": "RULE_CYCLICAL_PAIN_ROUTINE",
-                "message": "Breast pain without suspicious mass or red flags",
-                "details": ["Reassurance and conservative management advised."],
-                "notice": PLACEHOLDER_WARNING,
-            })
-            if "RULE_CYCLICAL_PAIN_ROUTINE" in rule_map:
-                matched_rule_versions.append(rule_map["RULE_CYCLICAL_PAIN_ROUTINE"])
-        else:
-            triggers.append({
-                "rule_code": "RULE_DEFAULT_ROUTINE",
-                "message": "No high-risk triggers detected. Routine clinical care.",
-                "details": [],
-                "notice": PLACEHOLDER_WARNING,
-            })
+        triggers.append({
+            "rule_code": "RULE_DEFAULT_ROUTINE",
+            "message": "No high-risk triggers detected. Routine clinical care.",
+            "details": [],
+            "notice": PLACEHOLDER_WARNING,
+        })
+
+    # Build Structured Management Plan & Referral Recommendation
+    management_plan = []
+    if triage_level == DecisionSupportAssessment.TRIAGE_URGENT:
+        management_plan.extend([
+            {"action": "Multidisciplinary Team (MDT) Case Review", "placeholder": True},
+            {"action": "Referral to Port Moresby General Hospital Oncology Service", "placeholder": True},
+            {"action": "Urgent surgical consultation at St. Mary Private Medical Center", "placeholder": True},
+        ])
+        if molecular_subtype == "Triple-negative" or molecular_subtype == "HER2-enriched":
+            management_plan.append({"action": "Neoadjuvant chemotherapy consideration", "placeholder": True})
+        if molecular_subtype in ("Luminal A", "Luminal B"):
+            management_plan.append({"action": "Hormone therapy evaluation (Tamoxifen / Anastrozole)", "placeholder": True})
+        referral_recommendation = "Urgent surgical and oncology referral to Port Moresby General Hospital / Specialist MDT."
+
+    elif triage_level == DecisionSupportAssessment.TRIAGE_PRIORITY:
+        management_plan.extend([
+            {"action": "Priority surgical review at St. Mary Private Medical Center", "placeholder": True},
+            {"action": "Complete diagnostic imaging & tissue biopsy", "placeholder": True},
+        ])
+        if molecular_subtype == "Incomplete":
+            management_plan.append({"action": "Order IHC biomarker panel (ER/PR/HER2/Ki67)", "placeholder": True})
+        referral_recommendation = "Priority surgical review at St. Mary Private Medical Center."
+
+    else:
+        management_plan.extend([
+            {"action": "Local clinical follow-up & symptom re-evaluation", "placeholder": True},
+            {"action": "Patient education & routine breast health monitoring", "placeholder": True},
+        ])
+        referral_recommendation = "Local follow-up at St. Mary Private Medical Center."
 
     # Summary recommendation string
     if triage_level == DecisionSupportAssessment.TRIAGE_URGENT:
         summary = (
             f"URGENT TRIAGE RECOMMENDED. Encounter demonstrates suspicious/red-flag clinical "
-            f"or diagnostic features ({len(triggers)} trigger(s) activated). "
+            f"or molecular features ({len(triggers)} trigger(s) activated). "
             f"Expedited diagnostic workup/biopsy/MDT review within 1-2 weeks recommended. "
             f"{PLACEHOLDER_WARNING}"
         )
     elif triage_level == DecisionSupportAssessment.TRIAGE_PRIORITY:
         summary = (
-            f"PRIORITY TRIAGE RECOMMENDED. Palpable mass or priority criteria met. "
-            f"Targeted diagnostic imaging recommended within 2-4 weeks. "
+            f"PRIORITY TRIAGE RECOMMENDED. Priority criteria or incomplete biomarker assessment met. "
+            f"Targeted diagnostic workup recommended within 2-4 weeks. "
             f"{PLACEHOLDER_WARNING}"
         )
     else:
@@ -190,6 +296,9 @@ def evaluate_encounter(encounter) -> dict:
         "encounter_id": encounter.id,
         "patient_pseudonym_id": str(encounter.patient.pseudonym_id),
         "calculated_triage_level": triage_level,
+        "molecular_subtype": molecular_subtype,
+        "management_plan": management_plan,
+        "referral_recommendation": referral_recommendation,
         "triggers": triggers,
         "disclaimer": PLACEHOLDER_WARNING,
         "evaluated_at": timezone.now().isoformat(),
@@ -198,6 +307,9 @@ def evaluate_encounter(encounter) -> dict:
     return {
         "triage_level": triage_level,
         "summary_recommendation": summary,
+        "molecular_subtype": molecular_subtype,
+        "management_plan": management_plan,
+        "referral_recommendation": referral_recommendation,
         "matched_rule_versions": matched_rule_versions,
         "reasoning_payload": reasoning_payload,
     }
@@ -205,7 +317,7 @@ def evaluate_encounter(encounter) -> dict:
 
 def seed_example_rules(user=None):
     """
-    Utility helper to seed 3-5 example breast-cancer triage rules,
+    Utility helper to seed breast-cancer triage rules,
     clearly marked as placeholder / unvalidated pending clinician review.
     """
     guideline, _ = Guideline.objects.get_or_create(
@@ -216,21 +328,31 @@ def seed_example_rules(user=None):
         },
     )
 
+    # Deprecate old guideline versions
+    GuidelineVersion.objects.filter(guideline=guideline, version_number="1.0.0-placeholder").update(is_active=False)
+
     gv, _ = GuidelineVersion.objects.get_or_create(
         guideline=guideline,
-        version_number="1.0.0-placeholder",
+        version_number="1.1.0-placeholder",
         defaults={
-            "source_citation": "PNG Ministry of Health Breast Cancer Guidelines (Draft) [PLACEHOLDER]",
+            "source_citation": "PNG Ministry of Health Breast Cancer Guidelines (v1.1 Draft) [PLACEHOLDER]",
             "approved_by": user,
             "approved_at": timezone.now(),
             "is_active": True,
         },
     )
 
+    # Deprecate old rule versions
+    RuleVersion.objects.filter(version_number="1.0.0-placeholder").update(status="deprecated")
+
     seeded_rules = [
         ("RULE_RED_FLAG_SYMPTOMS", "Red Flag Clinical Features", "Skin tethering, ulceration, nipple retraction or lymphadenopathy.", "URGENT"),
         ("RULE_BIRADS_4_5_SUSPICIOUS", "Suspicious Imaging Findings", "Mammography/Ultrasound BI-RADS category 4, 5, or 6.", "URGENT"),
         ("RULE_HIGH_RISK_BIOMARKER", "Aggressive Biomarker Profile", "Triple-negative, HER2-positive, or Ki-67 >= 30%.", "URGENT"),
+        ("RULE_STAGE_IV_PALLIATIVE", "Stage IV / Metastatic Disease", "Metastatic disease requiring urgent palliative MDT review.", "URGENT"),
+        ("RULE_LOCALLY_ADVANCED", "Locally Advanced Disease", "T4 or N2+ disease requiring urgent neoadjuvant review.", "URGENT"),
+        ("RULE_INCOMPLETE_BIOMARKER", "Incomplete Biomarker Assessment", "Confirmed malignancy missing biomarker profile.", "PRIORITY"),
+        ("RULE_EARLY_STAGE", "Early-Stage Disease", "Early stage operable breast cancer.", "PRIORITY"),
         ("RULE_PALPABLE_MASS_AGE_40", "Palpable Breast Mass in Patient Age >= 40", "Isolated breast mass in patient aged 40 or older.", "PRIORITY"),
         ("RULE_CYCLICAL_PAIN_ROUTINE", "Isolated Breast Pain", "Breast pain without palpable lump or red flags.", "ROUTINE"),
     ]
@@ -244,7 +366,7 @@ def seed_example_rules(user=None):
         )
         rversion, _ = RuleVersion.objects.get_or_create(
             decision_rule=drule,
-            version_number="1.0.0-placeholder",
+            version_number="1.1.0-placeholder",
             defaults={
                 "logic_spec": {
                     "rule_code": code,

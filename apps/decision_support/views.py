@@ -16,6 +16,7 @@ from .models import (
     RuleVersion,
 )
 from .serializers import (
+    ClinicianReviewCreateSerializer,
     ClinicianReviewSerializer,
     DecisionRuleSerializer,
     DecisionSupportAssessmentSerializer,
@@ -88,6 +89,9 @@ class DecisionSupportAssessmentViewSet(viewsets.ModelViewSet):
             encounter=encounter,
             triage_level=eval_result["triage_level"],
             summary_recommendation=eval_result["summary_recommendation"],
+            molecular_subtype=eval_result.get("molecular_subtype", ""),
+            management_plan=eval_result.get("management_plan", []),
+            referral_recommendation=eval_result.get("referral_recommendation", ""),
             reasoning_payload=eval_result["reasoning_payload"],
         )
 
@@ -96,6 +100,28 @@ class DecisionSupportAssessmentViewSet(viewsets.ModelViewSet):
             assessment.rule_versions_applied.set(matched_rule_versions)
 
         out_serializer = DecisionSupportAssessmentSerializer(assessment)
+        return Response(out_serializer.data, status=status.HTTP_201_CREATED)
+
+    @extend_schema(
+        request=ClinicianReviewCreateSerializer,
+        responses={201: ClinicianReviewSerializer},
+        description="Record human clinician review / confirmation / override of decision support assessment.",
+    )
+    @action(detail=True, methods=["post"], url_path="review")
+    def review(self, request, pk=None):
+        assessment = self.get_object()
+        serializer = ClinicianReviewCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        review_record = ClinicianReview.objects.create(
+            assessment=assessment,
+            reviewer=request.user,
+            agree_with_recommendation=serializer.validated_data["agree_with_recommendation"],
+            clinician_action_taken=serializer.validated_data.get("clinician_action_taken", ""),
+            notes=serializer.validated_data.get("notes", ""),
+        )
+
+        out_serializer = ClinicianReviewSerializer(review_record)
         return Response(out_serializer.data, status=status.HTTP_201_CREATED)
 
 

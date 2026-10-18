@@ -79,8 +79,15 @@ class ClinicianReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "reviewer", "reviewed_at")
 
 
+class ClinicianReviewCreateSerializer(serializers.Serializer):
+    agree_with_recommendation = serializers.BooleanField(required=True)
+    clinician_action_taken = serializers.CharField(required=False, allow_blank=True, default="")
+    notes = serializers.CharField(required=False, allow_blank=True, default="")
+
+
 class DecisionSupportAssessmentSerializer(serializers.ModelSerializer):
     clinician_reviews = ClinicianReviewSerializer(many=True, read_only=True)
+    is_reviewed = serializers.BooleanField(read_only=True)
 
     class Meta:
         model = DecisionSupportAssessment
@@ -90,11 +97,15 @@ class DecisionSupportAssessmentSerializer(serializers.ModelSerializer):
             "rule_versions_applied",
             "triage_level",
             "summary_recommendation",
+            "molecular_subtype",
+            "management_plan",
+            "referral_recommendation",
             "reasoning_payload",
             "calculated_at",
+            "is_reviewed",
             "clinician_reviews",
         )
-        read_only_fields = ("id", "calculated_at")
+        read_only_fields = ("id", "calculated_at", "is_reviewed")
 
 
 class EncounterEvaluationRequestSerializer(serializers.Serializer):
