@@ -6,8 +6,8 @@ This project includes a `nixpacks.toml` configuration file for zero-config build
 
 Nixpacks automatically configures the application environment based on `nixpacks.toml`:
 
-1. **Setup Phase**: Installs Python 3.12 runtime (`python312`).
-2. **Install Phase**: Installs dependencies via `pip install -r requirements.txt`.
+1. **Setup Phase**: Installs Python 3.12 runtime and pip (`python312`, `python312Packages.pip`).
+2. **Install Phase**: Initializes virtual environment `/opt/venv` and installs dependencies via `pip install -r requirements.txt`.
 3. **Build Phase**: Collects static files via `python manage.py collectstatic --noinput`.
 4. **Start Phase**: Runs database migrations and starts the Gunicorn web server:
    ```bash
@@ -38,4 +38,3 @@ Configure the following environment variables in your deployment platform settin
 
 > Note: the CSRF variable is `CSRF_TRUSTED_ORIGINS` (not `DJANGO_CSRF_TRUSTED_ORIGINS`)
 > and values must include the scheme, e.g. `https://dspng.space`.
-
