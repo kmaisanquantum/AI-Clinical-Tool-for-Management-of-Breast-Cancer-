@@ -1,0 +1,125 @@
+{% extends "web/base.html" %}
+{% block title %}Encounters &middot; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<header class="page-head">
+  <div>
+    <h1>Encounters</h1>
+    <p class="muted">Clinical interactions with linked assessments, notes and investigations.</p>
+  </div>
+  <button class="btn btn-primary" id="new-encounter">New encounter</button>
+</header>
+
+<section class="panel" id="new-encounter-panel" hidden>
+  <h2>Create encounter</h2>
+  <form id="encounter-form" class="form-grid">
+    <div>
+      <label for="e-patient">Patient</label>
+      <select id="e-patient" name="patient" required></select>
+    </div>
+    <div>
+      <label for="e-type">Encounter type</label>
+      <select id="e-type" name="encounter_type">
+        <option value="screening">Screening</option>
+        <option value="diagnostic">Diagnostic</option>
+        <option value="follow_up">Follow-up</option>
+        <option value="mdt_review">MDT Review</option>
+      </select>
+    </div>
+    <div>
+      <label for="e-date">Encounter date</label>
+      <input type="datetime-local" id="e-date" name="encounter_date">
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save encounter</button>
+      <button type="button" class="btn btn-ghost" id="cancel-encounter">Cancel</button>
+    </div>
+  </form>
+  <div class="alert alert-error" id="encounter-error" hidden></div>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <h2>All encounters</h2>
+    <input type="search" id="encounter-search" class="search" placeholder="Filter by type or patient&hellip;">
+  </div>
+  <table class="data-table" id="encounter-table">
+    <thead>
+      <tr><th>ID</th><th>Patient</th><th>Type</th><th>Date</th><th>Status</th><th></th></tr>
+    </thead>
+    <tbody><tr><td colspan="6" class="muted">Loading&hellip;</td></tr></tbody>
+  </table>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let allEncounters = [];
+
+function renderEncounters(filter = "") {
+  const needle = filter.trim().toLowerCase();
+  const rows = allEncounters.filter((e) =>
+    !needle ||
+    e.encounter_type.toLowerCase().includes(needle) ||
+    String(e.patient).includes(needle)
+  );
+  CDS.fillTable("#encounter-table tbody", rows, (e) => [
+    `#${e.id}`,
+    CDS.link(`/patients/${e.patient}/`, `Patient ${e.patient}`),
+    CDS.titleCase(e.encounter_type),
+    CDS.formatDate(e.encounter_date),
+    CDS.statusPill(e.status),
+    CDS.link(`/encounters/${e.id}/`, "Open"),
+  ]);
+}
+
+CDS.requireAuth().then(async () => {
+  const [encounters, patients] = await Promise.all([
+    CDS.api("/api/v1/clinical/encounters/"),
+    CDS.api("/api/v1/registry/patients/"),
+  ]);
+  allEncounters = encounters;
+  renderEncounters();
+
+  const select = document.getElementById("e-patient");
+  select.innerHTML = patients
+    .map((p) => `<option value="${p.id}">#${p.id} &middot; ${p.pseudonym_id.slice(0, 8)}</option>`)
+    .join("");
+
+  document.getElementById("encounter-search").addEventListener("input", (e) => {
+    renderEncounters(e.target.value);
+  });
+
+  const panel = document.getElementById("new-encounter-panel");
+  document.getElementById("new-encounter").addEventListener("click", () => {
+    panel.hidden = !panel.hidden;
+  });
+  document.getElementById("cancel-encounter").addEventListener("click", () => {
+    panel.hidden = true;
+  });
+
+  document.getElementById("encounter-form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const error = document.getElementById("encounter-error");
+    error.hidden = true;
+    const form = new FormData(e.target);
+    const body = {
+      patient: Number(form.get("patient")),
+      encounter_type: form.get("encounter_type"),
+    };
+    const date = form.get("encounter_date");
+    if (date) body.encounter_date = new Date(date).toISOString();
+    try {
+      const created = await CDS.api("/api/v1/clinical/encounters/", { method: "POST", body });
+      allEncounters.unshift(created);
+      renderEncounters(document.getElementById("encounter-search").value);
+      e.target.reset();
+      panel.hidden = true;
+    } catch (err) {
+      error.textContent = CDS.errorMessage(err);
+      error.hidden = false;
+    }
+  });
+});
+</script>
+{% endblock %}

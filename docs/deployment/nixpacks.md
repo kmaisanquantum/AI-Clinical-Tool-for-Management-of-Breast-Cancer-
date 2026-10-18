@@ -33,5 +33,9 @@ Configure the following environment variables in your deployment platform settin
 | `DJANGO_SECRET_KEY` | Cryptographic secret key | `generate-a-secure-random-key` |
 | `DATABASE_URL` | PostgreSQL connection URL | `postgres://user:pass@db-host:5432/dbname` |
 | `DJANGO_ALLOWED_HOSTS` | Allowed hostnames | `yourdomain.com,.onrender.com,.railway.app` |
-| `DJANGO_CSRF_TRUSTED_ORIGINS` | Trusted origins for CSRF | `https://yourdomain.com` |
+| `CSRF_TRUSTED_ORIGINS` | Trusted origins for CSRF (full scheme) | `https://yourdomain.com` |
 | `PORT` | Application port | `8000` |
+
+> Note: the CSRF variable is `CSRF_TRUSTED_ORIGINS` (not `DJANGO_CSRF_TRUSTED_ORIGINS`)
+> and values must include the scheme, e.g. `https://dspng.space`.
+

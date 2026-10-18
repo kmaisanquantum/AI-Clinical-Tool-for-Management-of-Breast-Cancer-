@@ -40,21 +40,25 @@ class BaseInvestigationViewSet(viewsets.ModelViewSet):
 class ImagingReportViewSet(BaseInvestigationViewSet):
     queryset = ImagingReport.objects.all().order_by("-created_at")
     serializer_class = ImagingReportSerializer
+    filterset_fields = ("encounter", "modality", "birads_category", "status")
 
 
 @extend_schema(tags=["Investigations"])
 class HistopathologyReportViewSet(BaseInvestigationViewSet):
     queryset = HistopathologyReport.objects.all().order_by("-created_at")
     serializer_class = HistopathologyReportSerializer
+    filterset_fields = ("encounter", "specimen_type", "grade", "status")
 
 
 @extend_schema(tags=["Investigations"])
 class BiomarkerResultViewSet(BaseInvestigationViewSet):
     queryset = BiomarkerResult.objects.all().order_by("-created_at")
     serializer_class = BiomarkerResultSerializer
+    filterset_fields = ("histopathology_report", "er_status", "pr_status", "her2_status", "status")
 
 
 @extend_schema(tags=["Investigations"])
 class StagingAssessmentViewSet(BaseInvestigationViewSet):
     queryset = StagingAssessment.objects.all().order_by("-created_at")
     serializer_class = StagingAssessmentSerializer
+    filterset_fields = ("encounter", "overall_stage", "status")

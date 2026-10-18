@@ -46,27 +46,33 @@ class BaseClinicalViewSet(viewsets.ModelViewSet):
 class EncounterViewSet(BaseClinicalViewSet):
     queryset = Encounter.objects.all().order_by("-created_at")
     serializer_class = EncounterSerializer
+    filterset_fields = ("patient", "encounter_type", "status")
+    search_fields = ("encounter_type",)
 
 
 @extend_schema(tags=["Clinical"])
 class ClinicalAssessmentViewSet(BaseClinicalViewSet):
     queryset = ClinicalAssessment.objects.all().order_by("-created_at")
     serializer_class = ClinicalAssessmentSerializer
+    filterset_fields = ("encounter", "assessment_type", "status")
 
 
 @extend_schema(tags=["Clinical"])
 class PresentingSymptomViewSet(BaseClinicalViewSet):
     queryset = PresentingSymptom.objects.all().order_by("-id")
     serializer_class = PresentingSymptomSerializer
+    filterset_fields = ("assessment", "symptom_type", "status")
 
 
 @extend_schema(tags=["Clinical"])
 class ExaminationFindingViewSet(BaseClinicalViewSet):
     queryset = ExaminationFinding.objects.all().order_by("-id")
     serializer_class = ExaminationFindingSerializer
+    filterset_fields = ("assessment", "finding_type", "status")
 
 
 @extend_schema(tags=["Clinical"])
 class ClinicalNoteViewSet(BaseClinicalViewSet):
     queryset = ClinicalNote.objects.all().order_by("-id")
     serializer_class = ClinicalNoteSerializer
+    filterset_fields = ("encounter", "note_type", "status")
