@@ -6,9 +6,11 @@ from . import views
 app_name = "web"
 
 urlpatterns = [
-    path("", views.dashboard, name="dashboard"),
-    path("patients/", views.patients, name="patients"),
-    path("patients/<int:pk>/", views.patient_detail, name="patient-detail"),
+    path("", views.DashboardView.as_view(), name="dashboard"),
+    path("patients/", views.PatientListView.as_view(), name="patients"),
+    path("patients/<int:pk>/", views.PatientDetailView.as_view(), name="patient-detail"),
+    path("assessments/", views.AssessmentListView.as_view(), name="assessment-list"),
+    path("assessments/<int:pk>/", views.AssessmentDetailView.as_view(), name="assessment-detail"),
     path("encounters/", views.encounters, name="encounters"),
     path("encounters/<int:pk>/", views.encounter_detail, name="encounter-detail"),
     path("triage/", views.triage, name="triage"),

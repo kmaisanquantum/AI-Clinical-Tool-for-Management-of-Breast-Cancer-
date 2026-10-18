@@ -201,3 +201,42 @@ def test_triage_evaluation_endpoint_returns_assessment(client):
     body = response.json()
     assert body["triage_level"] in {"URGENT", "PRIORITY", "ROUTINE"}
     assert body["encounter"] == encounter.id
+
+
+@pytest.mark.django_db
+def test_ui_pages_require_login(client):
+    urls = [
+        "/ui/patients/",
+        "/ui/patients/1/",
+        "/ui/assessments/",
+        "/ui/assessments/1/",
+    ]
+    for url in urls:
+        response = client.get(url)
+        assert response.status_code == 302
+        assert "/login/" in response.headers["Location"]
+
+
+@pytest.mark.django_db
+def test_ui_pages_render_for_authenticated_user(client):
+    user = User.objects.create_user(username="clinician", password="test-pass-1234")
+    patient = Patient.objects.create(year_of_birth=1970, sex="F")
+    encounter = Encounter.objects.create(patient=patient)
+    from apps.decision_support.models import DecisionSupportAssessment
+    assessment = DecisionSupportAssessment.objects.create(
+        encounter=encounter,
+        triage_level="URGENT",
+        summary_recommendation="Immediate oncology referral required.",
+    )
+    client.force_login(user)
+
+    routes = [
+        "/ui/patients/",
+        f"/ui/patients/{patient.id}/",
+        "/ui/assessments/",
+        f"/ui/assessments/{assessment.id}/",
+    ]
+    for url in routes:
+        response = client.get(url)
+        assert response.status_code == 200
+        assert "text/html" in response.headers["Content-Type"]

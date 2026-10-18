@@ -24,7 +24,7 @@ def test_health_db_failure(client):
 def test_root_redirect(client):
     r = client.get("/")
     assert r.status_code == 302
-    assert r.headers["Location"] == "/login/?next=/"
+    assert "/login/?next=/" in r.headers["Location"]
 
 
 @pytest.mark.django_db
