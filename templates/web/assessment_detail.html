@@ -12,32 +12,79 @@
     <span class="badge-triage badge-{{ assessment.triage_level|lower }}" style="font-size: 1rem; padding: 0.35rem 0.8rem;">
       {{ assessment.triage_level }}
     </span>
+    {% if assessment.molecular_subtype %}
+      <span class="pill" style="font-size: 0.9rem; padding: 0.35rem 0.7rem; background-color: #0f766e; color: white;">
+        Subtype: {{ assessment.molecular_subtype }}
+      </span>
+    {% endif %}
   </div>
   <p class="page-subtitle">Calculated at {{ assessment.calculated_at|date:"Y-m-d H:i:s" }} UTC</p>
 </div>
 
+<!-- Clinician Review Status Banner -->
+<div class="card" style="border-left: 4px solid {% if assessment.is_reviewed %}var(--routine){% else %}var(--priority){% endif %};">
+  <div class="card-title">Clinician Review &amp; Oversight Status</div>
+  {% if assessment.clinician_reviews.all %}
+    {% for rev in assessment.clinician_reviews.all %}
+      <div style="background: #f8fafc; padding: 0.75rem 1rem; border-radius: 6px; border: 1px solid var(--border-color); margin-bottom: 0.5rem;">
+        <strong>Reviewed by {{ rev.reviewer.username }}</strong> on {{ rev.reviewed_at|date:"Y-m-d H:i" }} &bull;
+        {% if rev.agree_with_recommendation %}
+          <span style="color: var(--routine); font-weight: 700;">CONFIRMED / AGREED</span>
+        {% else %}
+          <span style="color: var(--urgent); font-weight: 700;">OVERRIDDEN / DISAGREED</span>
+        {% endif %}
+        {% if rev.clinician_action_taken %}
+          <p style="margin-top: 0.25rem; font-size: 0.9rem;"><strong>Action Taken:</strong> {{ rev.clinician_action_taken }}</p>
+        {% endif %}
+        {% if rev.notes %}
+          <p style="margin-top: 0.25rem; font-size: 0.9rem; color: var(--text-muted);"><strong>Notes:</strong> {{ rev.notes }}</p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  {% else %}
+    <p style="color: var(--priority); font-weight: 600;">⚠️ PENDING CLINICIAN OVERSIGHT REVIEW</p>
+    <p style="color: var(--text-muted); font-size: 0.9rem;">All automated recommendations remain placeholder/unvalidated until reviewed by a qualified clinician.</p>
+  {% endif %}
+</div>
+
 <div class="card">
-  <div class="card-title">Recommendation Summary</div>
+  <div class="card-title">Recommendation &amp; Referral Summary</div>
   <p style="font-size: 1.1rem; font-weight: 500; color: var(--text-main); margin-bottom: 1rem;">
     {{ assessment.summary_recommendation }}
   </p>
+
+  {% if assessment.referral_recommendation %}
+    <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; padding: 1rem; border-radius: 6px; margin-bottom: 1rem;">
+      <strong style="color: #166534;">Referral Pathway Recommendation:</strong>
+      <p style="color: #15803d; font-size: 1rem; margin-top: 0.25rem;">{{ assessment.referral_recommendation }}</p>
+    </div>
+  {% endif %}
+
   <dl class="dl-grid">
     <dt>Patient</dt>
     <dd><a href="/ui/patients/{{ assessment.encounter.patient.id }}/">Patient #{{ assessment.encounter.patient.id }}</a> (Pseudonym: <code>{{ assessment.encounter.patient.pseudonym_id }}</code>)</dd>
     <dt>Encounter</dt>
     <dd>Encounter #{{ assessment.encounter.id }} ({{ assessment.encounter.encounter_type|title }})</dd>
-    <dt>Review Status</dt>
-    <dd>
-      {% if assessment.review_status == "approved" %}
-        <span class="badge-triage badge-routine">Approved</span> by {{ assessment.reviewed_by.username }} on {{ assessment.reviewed_at|date:"Y-m-d H:i" }}
-      {% elif assessment.review_status == "modified" %}
-        <span class="badge-triage badge-priority">Modified</span> by {{ assessment.reviewed_by.username }} on {{ assessment.reviewed_at|date:"Y-m-d H:i" }}
-      {% else %}
-        <span class="pill">Pending Clinician Review</span>
-      {% endif %}
-    </dd>
+    <dt>Molecular Subtype</dt>
+    <dd><strong>{{ assessment.molecular_subtype|default:"Incomplete / Unclassified" }}</strong></dd>
   </dl>
 </div>
+
+{% if assessment.management_plan %}
+<div class="card">
+  <div class="card-title">Individualised Management Plan Actions</div>
+  <ul style="list-style: none; padding: 0;">
+    {% for plan in assessment.management_plan %}
+      <li style="padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.95rem; font-weight: 500;">&bull; {{ plan.action }}</span>
+        {% if plan.placeholder %}
+          <span class="pill" style="font-size: 0.75rem; background-color: #fef3c7; color: #92400e;">PLACEHOLDER / UNVALIDATED</span>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
 
 <div class="card">
   <div class="card-title">Applied Guidelines &amp; Rule Versions</div>

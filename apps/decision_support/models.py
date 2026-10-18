@@ -123,11 +123,22 @@ class DecisionSupportAssessment(models.Model):
     )
     triage_level = models.CharField(max_length=20, choices=TRIAGE_CHOICES)
     summary_recommendation = models.TextField()
+    molecular_subtype = models.CharField(max_length=100, blank=True, default="")
+    management_plan = models.JSONField(
+        default=list,
+        blank=True,
+        help_text="Structured management plan actions with placeholder tags.",
+    )
+    referral_recommendation = models.TextField(blank=True, default="")
     reasoning_payload = models.JSONField(
         default=dict,
         help_text="Detailed payload outlining matched criteria, input values, and rule triggers.",
     )
     calculated_at = models.DateTimeField(default=timezone.now)
+
+    @property
+    def is_reviewed(self) -> bool:
+        return self.clinician_reviews.exists()
 
     def __str__(self):
         return f"DecisionAssessment(Encounter {self.encounter_id} - Triage: {self.triage_level})"

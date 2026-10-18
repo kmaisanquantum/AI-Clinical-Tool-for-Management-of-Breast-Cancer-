@@ -39,35 +39,43 @@ DEMO_USERS = [
 PATIENTS = [
     {
         "year_of_birth": 1968, "sex": "F", "region": "Port Moresby",
-        "name": "Demo Patient One", "mrn": "MRN-DEMO-0001",
-        "symptoms": [("breast_lump", 6), ("skin_tethering", 3)],
-        "birads": "5",
-        "biomarkers": {"er": "positive", "pr": "positive", "her2": "3+", "ki67": 35},
-        "staging": ("T2", "N1", "M0", "IIB"),
-    },
-    {
-        "year_of_birth": 1955, "sex": "F", "region": "Lae",
-        "name": "Demo Patient Two", "mrn": "MRN-DEMO-0002",
-        "symptoms": [("nipple_retraction", 8)],
-        "birads": "4c",
-        "biomarkers": {"er": "negative", "pr": "negative", "her2": "0", "ki67": 60},
-        "staging": ("T3", "N2", "M0", "IIIA"),
-    },
-    {
-        "year_of_birth": 1982, "sex": "F", "region": "Mount Hagen",
-        "name": "Demo Patient Three", "mrn": "MRN-DEMO-0003",
+        "name": "Demo Patient One (Luminal A)", "mrn": "MRN-DEMO-0001",
         "symptoms": [("breast_lump", 4)],
-        "birads": "3",
-        "biomarkers": {"er": "positive", "pr": "positive", "her2": "1+", "ki67": 12},
+        "birads": "4a",
+        "biomarkers": {"er": "positive", "pr": "positive", "her2": "0", "ki67": 10},
         "staging": ("T1", "N0", "M0", "I"),
     },
     {
+        "year_of_birth": 1955, "sex": "F", "region": "Lae",
+        "name": "Demo Patient Two (Luminal B)", "mrn": "MRN-DEMO-0002",
+        "symptoms": [("breast_lump", 8), ("skin_tethering", 3)],
+        "birads": "5",
+        "biomarkers": {"er": "positive", "pr": "positive", "her2": "3+", "ki67": 35},
+        "staging": ("T3", "N1", "M0", "IIIA"),
+    },
+    {
+        "year_of_birth": 1982, "sex": "F", "region": "Mount Hagen",
+        "name": "Demo Patient Three (HER2-Enriched)", "mrn": "MRN-DEMO-0003",
+        "symptoms": [("nipple_retraction", 6)],
+        "birads": "5",
+        "biomarkers": {"er": "negative", "pr": "negative", "her2": "3+", "ki67": 45},
+        "staging": ("T2", "N1", "M0", "IIB"),
+    },
+    {
         "year_of_birth": 1975, "sex": "F", "region": "Madang",
-        "name": "Demo Patient Four", "mrn": "MRN-DEMO-0004",
-        "symptoms": [("breast_pain", 2)],
-        "birads": "2",
-        "biomarkers": None,
-        "staging": ("T0", "N0", "M0", "0"),
+        "name": "Demo Patient Four (Triple Negative)", "mrn": "MRN-DEMO-0004",
+        "symptoms": [("breast_lump", 6), ("axillary_mass", 2)],
+        "birads": "5",
+        "biomarkers": {"er": "negative", "pr": "negative", "her2": "0", "ki67": 65},
+        "staging": ("T2", "N2", "M0", "IIIA"),
+    },
+    {
+        "year_of_birth": 1970, "sex": "F", "region": "Goroka",
+        "name": "Demo Patient Five (Incomplete Biomarkers)", "mrn": "MRN-DEMO-0005",
+        "symptoms": [("breast_lump", 5)],
+        "birads": "5",
+        "biomarkers": None,  # Incomplete biomarker case
+        "staging": ("T2", "N0", "M0", "IIA"),
     },
 ]
 
@@ -164,15 +172,16 @@ class Command(BaseCommand):
                     recorded_by=author,
                 )
 
+                report = HistopathologyReport.objects.create(
+                    encounter=encounter,
+                    specimen_type="core_needle_biopsy",
+                    histological_type="Invasive ductal carcinoma",
+                    grade="3",
+                    recorded_by=author,
+                )
+
                 if spec["biomarkers"]:
                     bm = spec["biomarkers"]
-                    report = HistopathologyReport.objects.create(
-                        encounter=encounter,
-                        specimen_type="core_needle_biopsy",
-                        histological_type="Invasive ductal carcinoma",
-                        grade="3",
-                        recorded_by=author,
-                    )
                     BiomarkerResult.objects.create(
                         histopathology_report=report,
                         er_status=bm["er"],
@@ -194,6 +203,9 @@ class Command(BaseCommand):
                     encounter=encounter,
                     triage_level=result["triage_level"],
                     summary_recommendation=result["summary_recommendation"],
+                    molecular_subtype=result.get("molecular_subtype", ""),
+                    management_plan=result.get("management_plan", []),
+                    referral_recommendation=result.get("referral_recommendation", ""),
                     reasoning_payload=result["reasoning_payload"],
                 )
                 if result["matched_rule_versions"]:
