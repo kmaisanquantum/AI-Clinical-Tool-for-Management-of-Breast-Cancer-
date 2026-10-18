@@ -3,12 +3,19 @@
 {% block title %}Patient #{{ patient.id }} &bull; Breast Cancer CDS{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <div style="margin-bottom: 0.5rem;">
-    <a href="/ui/patients/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to Patients</a>
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <div style="margin-bottom: 0.5rem;">
+      <a href="/ui/patients/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to Patients Directory</a>
+    </div>
+    <h1 class="page-title">Patient Record #{{ patient.id }}</h1>
+    <p class="page-subtitle">Pseudonym ID: <code>{{ patient.pseudonym_id }}</code></p>
   </div>
-  <h1 class="page-title">Patient Record #{{ patient.id }}</h1>
-  <p class="page-subtitle">Pseudonym ID: <code>{{ patient.pseudonym_id }}</code></p>
+  {% if can_record_clinical %}
+    <div>
+      <a href="/ui/patients/{{ patient.id }}/encounters/new/" class="btn-sm btn-primary" style="padding: 0.6rem 1rem; font-size: 0.9rem;">+ New Clinical Encounter</a>
+    </div>
+  {% endif %}
 </div>
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
@@ -58,17 +65,27 @@
 </div>
 
 <div class="card">
-  <div class="card-title">Clinical Encounters &amp; Investigations</div>
+  <div class="card-title">
+    <span>Clinical Encounters &amp; Investigations</span>
+  </div>
+
   {% for encounter in encounters %}
     <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 1.25rem; margin-bottom: 1.5rem; background-color: #fafafa;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
         <div>
           <strong style="font-size: 1.1rem;">Encounter #{{ encounter.id }}</strong>
           <span class="pill" style="margin-left: 0.5rem;">{{ encounter.encounter_type|title }}</span>
+          <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 0.5rem;">({{ encounter.encounter_date|date:"Y-m-d H:i" }})</span>
         </div>
-        <span style="color: var(--text-muted); font-size: 0.9rem;">
-          {{ encounter.encounter_date|date:"Y-m-d H:i" }} {% if encounter.recorded_by %}(By: {{ encounter.recorded_by.username }}){% endif %}
-        </span>
+        {% if can_record_clinical %}
+          <div style="display: flex; gap: 0.5rem;">
+            <a href="/ui/encounters/{{ encounter.id }}/investigations/" class="btn-sm btn-outline" style="color: var(--primary); border-color: var(--primary);">+ Pathology / Biomarkers / Staging</a>
+            <form method="post" action="/ui/encounters/{{ encounter.id }}/evaluate/" style="display:inline;">
+              {% csrf_token %}
+              <button type="submit" class="btn-sm btn-primary">Run Triage Assessment &rarr;</button>
+            </form>
+          </div>
+        {% endif %}
       </div>
 
       <!-- Imaging -->
@@ -129,12 +146,10 @@
               <p style="margin-top: 0.5rem; font-size: 0.95rem;">{{ dsa.summary_recommendation }}</p>
               <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
                 <strong>Clinician Review Status:</strong>
-                {% if dsa.review_status == "approved" %}
-                  <span style="color: var(--routine); font-weight: 600;">Approved</span> by {{ dsa.reviewed_by.username }} on {{ dsa.reviewed_at|date:"Y-m-d" }}
-                {% elif dsa.review_status == "modified" %}
-                  <span style="color: var(--priority); font-weight: 600;">Modified</span> by {{ dsa.reviewed_by.username }} on {{ dsa.reviewed_at|date:"Y-m-d" }}
+                {% if dsa.is_reviewed %}
+                  <span style="color: var(--routine); font-weight: 600;">Reviewed</span>
                 {% else %}
-                  <span style="color: var(--text-muted); font-weight: 600;">Pending Review</span>
+                  <span style="color: var(--priority); font-weight: 600;">Pending Clinician Review</span>
                 {% endif %}
               </div>
             </div>

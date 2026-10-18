@@ -135,6 +135,16 @@
       margin-top: 0.25rem;
     }
 
+    .alert {
+      padding: 0.75rem 1rem;
+      border-radius: 6px;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+
+    .alert-success { background-color: #dcfce7; border: 1px solid #bbf7d0; color: #166534; }
+    .alert-error { background-color: #ffe4e6; border: 1px solid #fecdd3; color: #9f1239; }
+
     .card {
       background-color: var(--card-bg);
       border: 1px solid var(--border-color);
@@ -152,6 +162,25 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.875rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .form-control {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 0.95rem;
     }
 
     .grid-4 {
@@ -264,6 +293,7 @@
       <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a></li>
       <li><a href="/ui/patients/" class="{% if '/ui/patients/' in request.path %}active{% endif %}">Patients</a></li>
       <li><a href="/ui/assessments/" class="{% if '/ui/assessments/' in request.path %}active{% endif %}">Assessments</a></li>
+      <li><a href="/ui/triage/" class="{% if '/ui/triage/' in request.path %}active{% endif %}">Triage Worklist</a></li>
       <li><a href="/api/v1/docs/" target="_blank">API Reference</a></li>
     </ul>
     <div class="nav-user">
@@ -280,21 +310,19 @@
   </header>
 
   <div class="banner">
-    <strong>Clinical Decision Support Only.</strong> Not a diagnostic device. Synthetic demonstration data only.
+    <strong>SYNTHETIC DATA &bull; CLINICAL DECISION SUPPORT ONLY.</strong> Not a diagnostic device.
   </div>
 
   <main class="container">
-    {% block page_header %}
-      {% if self.page_title %}
-        <div class="page-header">
-          <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
-          {% if self.page_subtitle %}
-            <p class="page-subtitle">{% block page_subtitle %}{% endblock %}</p>
-          {% endif %}
+    {% if messages %}
+      {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}error{% else %}success{% endif %}">
+          {{ msg }}
         </div>
-      {% endif %}
-    {% endblock %}
+      {% endfor %}
+    {% endif %}
 
+    {% block page_header %}{% endblock %}
     {% block content %}{% endblock %}
   </main>
 

@@ -240,3 +240,92 @@ def test_ui_pages_render_for_authenticated_user(client):
         response = client.get(url)
         assert response.status_code == 200
         assert "text/html" in response.headers["Content-Type"]
+
+
+@pytest.mark.django_db
+def test_patient_registration_form_permission_denial(client):
+    user = User.objects.create_user(username="viewer_only", password="test-pass-1234")
+    client.force_login(user)
+
+    response = client.get("/ui/patients/new/")
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_patient_registration_form_happy_path(client):
+    user = User.objects.create_user(username="clinician_recorder", password="test-pass-1234")
+    role = Role.objects.create(name="Clinician Recorder")
+    RolePermission.objects.create(role=role, permission_code="record_clinical")
+    RolePermission.objects.create(role=role, permission_code="view_patient_identity")
+    UserRole.objects.create(user=user, role=role)
+    client.force_login(user)
+
+    response = client.post(
+        "/ui/patients/new/",
+        {
+            "year_of_birth": 1978,
+            "sex": "F",
+            "region": "Rabaul",
+            "full_name": "Jane Doe",
+            "national_id_or_mrn": "MRN-9999",
+            "phone_number": "+675 7000 0000",
+        },
+    )
+    assert response.status_code == 302
+    patient = Patient.objects.filter(region="Rabaul").first()
+    assert patient is not None
+    assert patient.year_of_birth == 1978
+    assert PatientIdentity.objects.filter(patient=patient, national_id_or_mrn="MRN-9999").exists()
+
+
+@pytest.mark.django_db
+def test_investigation_and_evaluation_workflow(client):
+    user = User.objects.create_user(username="clinician_doc", password="test-pass-1234")
+    role = Role.objects.create(name="Oncologist")
+    RolePermission.objects.create(role=role, permission_code="record_clinical")
+    UserRole.objects.create(user=user, role=role)
+    client.force_login(user)
+
+    patient = Patient.objects.create(year_of_birth=1965, sex="F", region="Goroka")
+    encounter = Encounter.objects.create(patient=patient, recorded_by=user)
+
+    # Post investigations
+    inv_res = client.post(
+        f"/ui/encounters/{encounter.id}/investigations/",
+        {
+            "specimen_type": "Core needle biopsy",
+            "histological_type": "Invasive ductal carcinoma",
+            "grade": "3",
+            "er_status": "negative",
+            "pr_status": "negative",
+            "her2_status": "0",
+            "ki67_index": "50.0",
+            "t_stage": "T2",
+            "n_stage": "N1",
+            "m_stage": "M0",
+            "overall_stage": "IIB",
+        },
+    )
+    assert inv_res.status_code == 302
+
+    # Trigger evaluation
+    eval_res = client.post(f"/ui/encounters/{encounter.id}/evaluate/")
+    assert eval_res.status_code == 302
+
+    from apps.decision_support.models import DecisionSupportAssessment
+    assessment = DecisionSupportAssessment.objects.filter(encounter=encounter).first()
+    assert assessment is not None
+    assert assessment.triage_level == "URGENT"
+    assert assessment.molecular_subtype in ("Triple-negative", "Triple Negative")
+
+    # Review assessment via form
+    rev_res = client.post(
+        f"/ui/assessments/{assessment.id}/review/",
+        {
+            "agree_with_recommendation": "true",
+            "clinician_action_taken": "Urgent MDT referral confirmed.",
+            "notes": "Agreed.",
+        },
+    )
+    assert rev_res.status_code == 302
+    assert assessment.is_reviewed is True
