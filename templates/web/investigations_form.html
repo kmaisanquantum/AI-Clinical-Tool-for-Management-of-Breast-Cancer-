@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Investigations &bull; Encounter #{{ encounter.id }}{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="margin-bottom: 0.5rem;">
+    <a href="/ui/patients/{{ encounter.patient.id }}/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to Patient #{{ encounter.patient.id }}</a>
+  </div>
+  <h1 class="page-title">Histopathology, Biomarkers &amp; Staging</h1>
+  <p class="page-subtitle">Record clinical investigations for Encounter #{{ encounter.id }}</p>
+</div>
+
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+    <h3 style="margin-bottom: 1rem; color: var(--primary);">1. Histopathology Report</h3>
+    <div class="form-group">
+      <label for="{{ histo_form.specimen_type.id_for_label }}">Specimen Type</label>
+      {{ histo_form.specimen_type }}
+    </div>
+    <div class="form-group">
+      <label for="{{ histo_form.histological_type.id_for_label }}">Histological Type</label>
+      {{ histo_form.histological_type }}
+    </div>
+    <div class="form-group">
+      <label for="{{ histo_form.grade.id_for_label }}">Histological Grade</label>
+      {{ histo_form.grade }}
+    </div>
+    <div class="form-group">
+      <label for="{{ histo_form.margin_status.id_for_label }}">Margin Status</label>
+      {{ histo_form.margin_status }}
+    </div>
+    <div class="form-group">
+      <label for="{{ histo_form.description.id_for_label }}">Pathology Description</label>
+      {{ histo_form.description }}
+    </div>
+
+    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+    <h3 style="margin-bottom: 1rem; color: var(--primary);">2. Biomarker Results (IHC)</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label for="{{ bm_form.er_status.id_for_label }}">ER Status</label>
+        {{ bm_form.er_status }}
+      </div>
+      <div class="form-group">
+        <label for="{{ bm_form.pr_status.id_for_label }}">PR Status</label>
+        {{ bm_form.pr_status }}
+      </div>
+      <div class="form-group">
+        <label for="{{ bm_form.her2_status.id_for_label }}">HER2 Status</label>
+        {{ bm_form.her2_status }}
+      </div>
+      <div class="form-group">
+        <label for="{{ bm_form.ki67_index.id_for_label }}">Ki-67 Index (%)</label>
+        {{ bm_form.ki67_index }}
+      </div>
+    </div>
+
+    <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+
+    <h3 style="margin-bottom: 1rem; color: var(--primary);">3. Anatomical Staging Assessment (TNM)</h3>
+    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label for="{{ stg_form.t_stage.id_for_label }}">T Stage</label>
+        {{ stg_form.t_stage }}
+      </div>
+      <div class="form-group">
+        <label for="{{ stg_form.n_stage.id_for_label }}">N Stage</label>
+        {{ stg_form.n_stage }}
+      </div>
+      <div class="form-group">
+        <label for="{{ stg_form.m_stage.id_for_label }}">M Stage</label>
+        {{ stg_form.m_stage }}
+      </div>
+      <div class="form-group">
+        <label for="{{ stg_form.overall_stage.id_for_label }}">Overall Stage</label>
+        {{ stg_form.overall_stage }}
+      </div>
+    </div>
+
+    <div style="margin-top: 1.5rem;">
+      <button type="submit" class="btn-sm btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.95rem;">Save Investigations</button>
+      <a href="/ui/patients/{{ encounter.patient.id }}/" class="btn-sm btn-outline" style="color: var(--text-main); border-color: var(--border-color); margin-left: 0.5rem;">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

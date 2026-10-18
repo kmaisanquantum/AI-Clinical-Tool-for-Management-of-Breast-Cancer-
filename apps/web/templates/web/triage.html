@@ -1,103 +1,93 @@
-{% extends "web/base.html" %}
-{% block title %}Triage &middot; Breast Cancer CDS{% endblock %}
+{% extends "base.html" %}
+
+{% block title %}Triage Worklist &bull; Breast Cancer CDS{% endblock %}
 
 {% block content %}
-<header class="page-head">
-  <div>
-    <h1>Triage evaluation</h1>
-    <p class="muted">Run the deterministic rules engine against an encounter and review past assessments.</p>
-  </div>
-</header>
+<div class="page-header">
+  <h1 class="page-title">Clinical Triage Worklist</h1>
+  <p class="page-subtitle">Live worklist of pending encounters awaiting evaluation and assessments awaiting clinician review.</p>
+</div>
 
-<section class="panel">
-  <h2>Evaluate an encounter</h2>
-  <form id="eval-form" class="form-grid">
-    <div>
-      <label for="eval-encounter">Encounter</label>
-      <select id="eval-encounter" name="encounter_id" required></select>
-    </div>
-    <div class="form-actions">
-      <button type="submit" class="btn btn-primary">Run evaluation</button>
-    </div>
-  </form>
-  <div class="alert alert-warning">
-    Rules are placeholders pending clinical validation. Output must be reviewed by a clinician
-    and is not a diagnosis.
-  </div>
-</section>
-
-<section id="eval-result" hidden></section>
-
-<section class="panel">
-  <h2>Assessment history</h2>
-  <table class="data-table">
-    <thead><tr><th>ID</th><th>Encounter</th><th>Triage</th><th>Recommendation</th><th>Calculated</th><th>Reviewed</th></tr></thead>
-    <tbody id="history-rows"><tr><td colspan="6" class="muted">Loading&hellip;</td></tr></tbody>
+<div class="card">
+  <div class="card-title">1. Pending Encounters (Awaiting Triage Evaluation)</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Encounter ID</th>
+        <th>Patient</th>
+        <th>Encounter Type</th>
+        <th>Recorded Date</th>
+        <th>Recorded By</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for enc in pending_encounters %}
+        <tr>
+          <td>#{{ enc.id }}</td>
+          <td><a href="/ui/patients/{{ enc.patient.id }}/">Patient #{{ enc.patient.id }}</a></td>
+          <td><span class="pill">{{ enc.encounter_type|title }}</span></td>
+          <td>{{ enc.encounter_date|date:"Y-m-d H:i" }}</td>
+          <td>{{ enc.recorded_by.username|default:"—" }}</td>
+          <td>
+            {% if can_record_clinical %}
+              <form method="post" action="/ui/encounters/{{ enc.id }}/evaluate/" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-sm btn-primary">Run Triage Assessment &rarr;</button>
+              </form>
+            {% else %}
+              <a href="/ui/patients/{{ enc.patient.id }}/" class="btn-sm btn-outline" style="color: var(--text-main); border-color: var(--border-color);">View Record</a>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+            No pending encounters awaiting triage evaluation.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
   </table>
-</section>
-{% endblock %}
+</div>
 
-{% block scripts %}
-<script>
-function renderResult(result) {
-  const box = document.getElementById("eval-result");
-  const triggers = result.reasoning_payload.triggers || [];
-  box.hidden = false;
-  box.innerHTML = `
-    <div class="triage-banner triage-${result.triage_level.toLowerCase()}">
-      <div>
-        <span class="pill pill-${result.triage_level.toLowerCase()}">${result.triage_level}</span>
-        <h2>Assessment #${result.id}</h2>
-      </div>
-      <p>${CDS.escape(result.summary_recommendation)}</p>
-    </div>
-    <div class="panel">
-      <h2>Matched criteria</h2>
-      ${triggers.map((t) => `
-        <div class="card">
-          <div class="card-head"><strong>${CDS.escape(t.rule_code)}</strong></div>
-          <p>${CDS.escape(t.message)}</p>
-          ${t.details.length ? `<ul>${t.details.map((d) => `<li>${CDS.escape(d)}</li>`).join("")}</ul>` : ""}
-        </div>`).join("")}
-    </div>`;
-}
-
-async function loadHistory() {
-  const rows = await CDS.api("/api/v1/decision-support/assessments/");
-  CDS.fillTable("#history-rows", rows, (a) => [
-    `#${a.id}`,
-    CDS.link(`/encounters/${a.encounter}/`, `Encounter ${a.encounter}`),
-    CDS.triagePill(a.triage_level),
-    CDS.escape(a.summary_recommendation).slice(0, 90) + "&hellip;",
-    CDS.formatDate(a.calculated_at),
-    a.clinician_reviews.length ? `${a.clinician_reviews.length} review(s)` : '<span class="muted">None</span>',
-  ]);
-}
-
-CDS.requireAuth().then(async () => {
-  const encounters = await CDS.api("/api/v1/clinical/encounters/");
-  document.getElementById("eval-encounter").innerHTML = encounters
-    .map((e) => `<option value="${e.id}">#${e.id} · ${CDS.titleCase(e.encounter_type)} · Patient ${e.patient}</option>`)
-    .join("");
-
-  await loadHistory();
-
-  document.getElementById("eval-form").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const id = Number(new FormData(e.target).get("encounter_id"));
-    try {
-      const result = await CDS.api("/api/v1/decision-support/assessments/evaluate/", {
-        method: "POST",
-        body: { encounter_id: id },
-      });
-      renderResult(result);
-      await loadHistory();
-    } catch (err) {
-      const box = document.getElementById("eval-result");
-      box.hidden = false;
-      box.innerHTML = `<div class="alert alert-error">${CDS.errorMessage(err)}</div>`;
-    }
-  });
-});
-</script>
+<div class="card">
+  <div class="card-title">2. Triage Assessments Awaiting Clinician Review</div>
+  <table>
+    <thead>
+      <tr>
+        <th>Assessment ID</th>
+        <th>Triage Level</th>
+        <th>Patient</th>
+        <th>Molecular Subtype</th>
+        <th>Calculated At</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for a in pending_assessments %}
+        <tr>
+          <td>#{{ a.id }}</td>
+          <td>
+            <span class="badge-triage badge-{{ a.triage_level|lower }}">
+              {{ a.triage_level }}
+            </span>
+          </td>
+          <td><a href="/ui/patients/{{ a.encounter.patient.id }}/">Patient #{{ a.encounter.patient.id }}</a></td>
+          <td>{{ a.molecular_subtype|default:"Incomplete" }}</td>
+          <td>{{ a.calculated_at|date:"Y-m-d H:i" }}</td>
+          <td><span class="pill" style="background-color: #fef3c7; color: #92400e;">Pending Review</span></td>
+          <td><a href="/ui/assessments/{{ a.id }}/" class="btn-sm btn-primary">Review Assessment &rarr;</a></td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+            No triage assessments awaiting clinician review.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
 {% endblock %}

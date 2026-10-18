@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block title %}Register Patient &bull; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="margin-bottom: 0.5rem;">
+    <a href="/ui/patients/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to Patients Directory</a>
+  </div>
+  <h1 class="page-title">Register New Patient</h1>
+  <p class="page-subtitle">Register a pseudonymous patient record into the clinical registry.</p>
+</div>
+
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+    <h3 style="margin-bottom: 1rem;">Pseudonymous Record Details</h3>
+    <div class="form-group">
+      <label for="{{ p_form.year_of_birth.id_for_label }}">Year of Birth</label>
+      {{ p_form.year_of_birth }}
+    </div>
+    <div class="form-group">
+      <label for="{{ p_form.sex.id_for_label }}">Sex</label>
+      {{ p_form.sex }}
+    </div>
+    <div class="form-group">
+      <label for="{{ p_form.region.id_for_label }}">Region</label>
+      {{ p_form.region }}
+    </div>
+
+    {% if can_view_identity and id_form %}
+      <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid var(--border-color);">
+      <h3 style="margin-bottom: 1rem;">Identifiable Information (Permission Gated)</h3>
+      <div class="form-group">
+        <label for="{{ id_form.full_name.id_for_label }}">Full Name</label>
+        {{ id_form.full_name }}
+      </div>
+      <div class="form-group">
+        <label for="{{ id_form.national_id_or_mrn.id_for_label }}">MRN / National ID</label>
+        {{ id_form.national_id_or_mrn }}
+      </div>
+      <div class="form-group">
+        <label for="{{ id_form.date_of_birth.id_for_label }}">Date of Birth</label>
+        {{ id_form.date_of_birth }}
+      </div>
+      <div class="form-group">
+        <label for="{{ id_form.phone_number.id_for_label }}">Phone Number</label>
+        {{ id_form.phone_number }}
+      </div>
+      <div class="form-group">
+        <label for="{{ id_form.address.id_for_label }}">Address</label>
+        {{ id_form.address }}
+      </div>
+    {% endif %}
+
+    <div style="margin-top: 1.5rem;">
+      <button type="submit" class="btn-sm btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.95rem;">Save Patient Record</button>
+      <a href="/ui/patients/" class="btn-sm btn-outline" style="color: var(--text-main); border-color: var(--border-color); margin-left: 0.5rem;">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}
