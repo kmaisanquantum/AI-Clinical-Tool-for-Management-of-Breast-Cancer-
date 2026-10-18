@@ -35,3 +35,12 @@ class HasPatientIdentityPermission(permissions.BasePermission):
     """
     def has_permission(self, request, view):
         return user_has_permission(request.user, "view_patient_identity")
+
+
+class HasManageRulesPermission(permissions.BasePermission):
+    """
+    Permission check for decision rule administration and rule CRUD.
+    Only users with 'manage_rules' permission code (or superusers/clinical_admin role) are allowed.
+    """
+    def has_permission(self, request, view):
+        return user_has_permission(request.user, "manage_rules")

@@ -3,6 +3,25 @@ from django.db import models
 from django.utils import timezone
 
 
+class MolecularSubtype(models.Model):
+    """Molecular subtype classification (Luminal A, Luminal B, HER2-enriched, Triple-negative)."""
+    NAME_CHOICES = (
+        ("luminal_a", "Luminal A-like"),
+        ("luminal_b", "Luminal B-like"),
+        ("her2_enriched", "HER2-enriched"),
+        ("triple_negative", "Triple-negative"),
+        ("unclassified", "Unclassified"),
+    )
+
+    name = models.CharField(max_length=50, choices=NAME_CHOICES, unique=True)
+    display_name = models.CharField(max_length=100)
+    description = models.TextField(blank=True)
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.display_name} ({self.name})"
+
+
 class Guideline(models.Model):
     """Clinical guideline definition (e.g. PNG Breast Cancer Management Guideline)."""
     code = models.CharField(max_length=100, unique=True)
@@ -124,12 +143,26 @@ class DecisionSupportAssessment(models.Model):
     triage_level = models.CharField(max_length=20, choices=TRIAGE_CHOICES)
     summary_recommendation = models.TextField()
     molecular_subtype = models.CharField(max_length=100, blank=True, default="")
+    molecular_subtype_fk = models.ForeignKey(
+        MolecularSubtype,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assessments",
+    )
+    incomplete_data = models.BooleanField(default=False)
     management_plan = models.JSONField(
         default=list,
         blank=True,
         help_text="Structured management plan actions with placeholder tags.",
     )
     referral_recommendation = models.TextField(blank=True, default="")
+    ai_suggestion = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text="Optional AI abstraction layer suggestion (off by default).",
+    )
+    ai_provider_version = models.CharField(max_length=100, blank=True, default="")
     reasoning_payload = models.JSONField(
         default=dict,
         help_text="Detailed payload outlining matched criteria, input values, and rule triggers.",
@@ -142,6 +175,25 @@ class DecisionSupportAssessment(models.Model):
 
     def __str__(self):
         return f"DecisionAssessment(Encounter {self.encounter_id} - Triage: {self.triage_level})"
+
+
+class ManagementPlan(models.Model):
+    """Individualised management plan recommendations attached to an assessment."""
+    assessment = models.ForeignKey(
+        DecisionSupportAssessment,
+        on_delete=models.CASCADE,
+        related_name="management_plans",
+    )
+    plan_type = models.CharField(max_length=100, default="general")
+    recommendation_text = models.TextField()
+    requires_referral = models.BooleanField(default=False)
+    referral_destination = models.CharField(max_length=255, blank=True, default="")
+    timeframe_days = models.IntegerField(null=True, blank=True)
+    resource_level = models.CharField(max_length=100, blank=True, default="")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"ManagementPlan({self.plan_type} - {self.recommendation_text[:30]})"
 
 
 class ClinicianReview(models.Model):

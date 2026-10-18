@@ -18,7 +18,11 @@ from apps.clinical.models import (
     PresentingSymptom,
 )
 from apps.decision_support.engine import evaluate_encounter, seed_example_rules
-from apps.decision_support.models import DecisionSupportAssessment
+from apps.decision_support.models import (
+    DecisionSupportAssessment,
+    ManagementPlan,
+    MolecularSubtype,
+)
 from apps.investigations.models import (
     BiomarkerResult,
     HistopathologyReport,
@@ -30,10 +34,19 @@ from apps.registry.models import Patient, PatientIdentity
 User = get_user_model()
 
 DEMO_USERS = [
+    ("clinical_admin", "Clinical Admin", ["manage_rules", "view_patient_identity", "record_clinical"]),
     ("doctor", "Oncologist", ["view_patient_identity", "record_clinical"]),
     ("oncologist", "Oncologist", ["view_patient_identity", "record_clinical"]),
     ("registrar", "Registrar", ["record_clinical"]),
     ("analyst", "Analyst", []),
+]
+
+SUBTYPES = [
+    ("luminal_a", "Luminal A-like", "ER+/PR+, HER2-negative, low Ki-67 (<20%)"),
+    ("luminal_b", "Luminal B-like", "ER+/PR+, HER2-positive OR high Ki-67 (>=20%)"),
+    ("her2_enriched", "HER2-enriched", "ER-negative, PR-negative, HER2-positive"),
+    ("triple_negative", "Triple-negative", "ER-negative, PR-negative, HER2-negative"),
+    ("unclassified", "Unclassified", "Incomplete or non-conclusive biomarker profile"),
 ]
 
 PATIENTS = [
@@ -94,6 +107,14 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         password = options["password"]
 
+        # 1. Seed MolecularSubtype lookup table
+        for name, display_name, desc in SUBTYPES:
+            MolecularSubtype.objects.get_or_create(
+                name=name,
+                defaults={"display_name": display_name, "description": desc, "is_active": True},
+            )
+
+        # 2. Seed Users & Roles
         users = {}
         for username, role_name, permission_codes in DEMO_USERS:
             user, created = User.objects.get_or_create(
@@ -116,6 +137,7 @@ class Command(BaseCommand):
         author = users["oncologist"]
         seed_example_rules(user=author)
 
+        # 3. Seed Patients & Encounters
         for spec in PATIENTS:
             identity = PatientIdentity.objects.filter(national_id_or_mrn=spec["mrn"]).first()
             if identity:
@@ -204,10 +226,26 @@ class Command(BaseCommand):
                     triage_level=result["triage_level"],
                     summary_recommendation=result["summary_recommendation"],
                     molecular_subtype=result.get("molecular_subtype", ""),
+                    molecular_subtype_fk=result.get("molecular_subtype_fk"),
+                    incomplete_data=result.get("incomplete_data", False),
                     management_plan=result.get("management_plan", []),
                     referral_recommendation=result.get("referral_recommendation", ""),
+                    ai_suggestion=result.get("ai_suggestion", {}),
+                    ai_provider_version=result.get("ai_provider_version", ""),
                     reasoning_payload=result["reasoning_payload"],
                 )
+
+                for item in result.get("management_plan", []):
+                    ManagementPlan.objects.create(
+                        assessment=triage,
+                        plan_type=item.get("plan_type", "general"),
+                        recommendation_text=item.get("recommendation_text", ""),
+                        requires_referral=item.get("requires_referral", False),
+                        referral_destination=item.get("referral_destination", ""),
+                        timeframe_days=item.get("timeframe_days"),
+                        resource_level=item.get("resource_level", ""),
+                    )
+
                 if result["matched_rule_versions"]:
                     triage.rule_versions_applied.set(result["matched_rule_versions"])
 

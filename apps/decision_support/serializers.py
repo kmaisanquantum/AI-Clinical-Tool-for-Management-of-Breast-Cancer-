@@ -6,8 +6,16 @@ from .models import (
     DecisionSupportAssessment,
     Guideline,
     GuidelineVersion,
+    ManagementPlan,
+    MolecularSubtype,
     RuleVersion,
 )
+
+
+class MolecularSubtypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MolecularSubtype
+        fields = ("id", "name", "display_name", "description", "is_active")
 
 
 class GuidelineSerializer(serializers.ModelSerializer):
@@ -61,6 +69,21 @@ class RuleVersionSerializer(serializers.ModelSerializer):
         )
 
 
+class ManagementPlanSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ManagementPlan
+        fields = (
+            "id",
+            "plan_type",
+            "recommendation_text",
+            "requires_referral",
+            "referral_destination",
+            "timeframe_days",
+            "resource_level",
+            "created_at",
+        )
+
+
 class ClinicianReviewSerializer(serializers.ModelSerializer):
     reviewer_username = serializers.CharField(source="reviewer.username", read_only=True)
 
@@ -87,6 +110,7 @@ class ClinicianReviewCreateSerializer(serializers.Serializer):
 
 class DecisionSupportAssessmentSerializer(serializers.ModelSerializer):
     clinician_reviews = ClinicianReviewSerializer(many=True, read_only=True)
+    management_plans = ManagementPlanSerializer(many=True, read_only=True)
     is_reviewed = serializers.BooleanField(read_only=True)
 
     class Meta:
@@ -98,8 +122,13 @@ class DecisionSupportAssessmentSerializer(serializers.ModelSerializer):
             "triage_level",
             "summary_recommendation",
             "molecular_subtype",
+            "molecular_subtype_fk",
+            "incomplete_data",
             "management_plan",
+            "management_plans",
             "referral_recommendation",
+            "ai_suggestion",
+            "ai_provider_version",
             "reasoning_payload",
             "calculated_at",
             "is_reviewed",
