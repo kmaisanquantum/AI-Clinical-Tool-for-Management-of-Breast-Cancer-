@@ -12,14 +12,20 @@ clinical-governance, privacy and regulatory review is complete.
 Web Interface: http://127.0.0.1:8000/
 API docs: http://127.0.0.1:8000/api/v1/docs/
 
-## Creating an Admin User
-After deploying (e.g. via Coolify or Docker), create an admin user using the container terminal:
+## Creating User Accounts
+After deploying (e.g. via Coolify or Docker), create a superuser using the container terminal:
 
 ```bash
 python manage.py createsuperuser
 ```
 
-Or seed demo users (`oncologist`, `registrar`, `analyst` with password `DemoPass!2025`):
+Or create a demo account with a specific username, password, and role:
+
+```bash
+python manage.py create_demo_user --username doctor --password doctor
+```
+
+Or seed synthetic demo data along with demo accounts (`doctor`, `oncologist`, `registrar`, `analyst` with password `DemoPass!2025`):
 
 ```bash
 python manage.py seed_demo

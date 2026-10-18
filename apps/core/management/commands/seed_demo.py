@@ -30,6 +30,7 @@ from apps.registry.models import Patient, PatientIdentity
 User = get_user_model()
 
 DEMO_USERS = [
+    ("doctor", "Oncologist", ["view_patient_identity", "record_clinical"]),
     ("oncologist", "Oncologist", ["view_patient_identity", "record_clinical"]),
     ("registrar", "Registrar", ["record_clinical"]),
     ("analyst", "Analyst", []),
