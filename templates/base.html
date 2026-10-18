@@ -1,0 +1,307 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Breast Cancer Clinical Decision Support{% endblock %}</title>
+  <style>
+    :root {
+      --primary: #0f766e;
+      --primary-hover: #0d9488;
+      --bg-slate: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --border-color: #e2e8f0;
+      --urgent: #be123c;
+      --urgent-bg: #ffe4e6;
+      --priority: #d97706;
+      --priority-bg: #fef3c7;
+      --routine: #15803d;
+      --routine-bg: #dcfce7;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg-slate);
+      color: var(--text-main);
+      line-height: 1.5;
+    }
+
+    .navbar {
+      background-color: #0f172a;
+      color: #ffffff;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.75rem 1.5rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      text-decoration: none;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 1.1rem;
+    }
+
+    .nav-brand .badge {
+      background-color: var(--primary);
+      color: #ffffff;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 1.25rem;
+      align-items: center;
+      list-style: none;
+    }
+
+    .nav-links a {
+      color: #cbd5e1;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    .nav-links a:hover, .nav-links a.active {
+      color: #ffffff;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .nav-user span {
+      font-size: 0.875rem;
+      color: #94a3b8;
+    }
+
+    .btn-sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.85rem;
+      border-radius: 4px;
+      border: none;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    .btn-primary { background-color: var(--primary); color: white; }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-outline { background-color: transparent; border: 1px solid #475569; color: #f8fafc; }
+    .btn-outline:hover { background-color: #334155; }
+
+    .banner {
+      background-color: #fef3c7;
+      border-bottom: 1px solid #fde68a;
+      color: #92400e;
+      padding: 0.5rem 1.5rem;
+      font-size: 0.85rem;
+      text-align: center;
+      font-weight: 500;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .page-header {
+      margin-bottom: 1.5rem;
+    }
+
+    .page-title {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .page-subtitle {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-top: 0.25rem;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+
+    .card-title {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      color: var(--text-main);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .grid-4 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-box {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 1.25rem;
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: var(--primary);
+    }
+
+    .stat-lbl {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background-color: #f1f5f9;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+    }
+
+    tr:hover { background-color: #f8fafc; }
+
+    .badge-triage {
+      padding: 0.25rem 0.6rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      display: inline-block;
+    }
+
+    .badge-urgent { background-color: var(--urgent-bg); color: var(--urgent); }
+    .badge-priority { background-color: var(--priority-bg); color: var(--priority); }
+    .badge-routine { background-color: var(--routine-bg); color: var(--routine); }
+
+    .pill {
+      background: #e2e8f0;
+      color: #334155;
+      padding: 0.2rem 0.5rem;
+      border-radius: 4px;
+      font-size: 0.8rem;
+    }
+
+    .dl-grid {
+      display: grid;
+      grid-template-columns: 180px 1fr;
+      row-gap: 0.75rem;
+      font-size: 0.95rem;
+    }
+
+    .dl-grid dt {
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+    code {
+      font-family: monospace;
+      background-color: #f1f5f9;
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      font-size: 0.875rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <header class="navbar">
+    <a href="/" class="nav-brand">
+      <span class="badge">CDS</span>
+      <span>Breast Cancer Decision Support</span>
+    </a>
+    <ul class="nav-links">
+      <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a></li>
+      <li><a href="/ui/patients/" class="{% if '/ui/patients/' in request.path %}active{% endif %}">Patients</a></li>
+      <li><a href="/ui/assessments/" class="{% if '/ui/assessments/' in request.path %}active{% endif %}">Assessments</a></li>
+      <li><a href="/api/v1/docs/" target="_blank">API Reference</a></li>
+    </ul>
+    <div class="nav-user">
+      {% if request.user.is_authenticated %}
+        <span>{{ request.user.username }}</span>
+        <form method="post" action="{% url 'web:logout' %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn-sm btn-outline">Sign out</button>
+        </form>
+      {% else %}
+        <a href="{% url 'web:login' %}" class="btn-sm btn-primary">Sign in</a>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="banner">
+    <strong>Clinical Decision Support Only.</strong> Not a diagnostic device. Synthetic demonstration data only.
+  </div>
+
+  <main class="container">
+    {% block page_header %}
+      {% if self.page_title %}
+        <div class="page-header">
+          <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+          {% if self.page_subtitle %}
+            <p class="page-subtitle">{% block page_subtitle %}{% endblock %}</p>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% endblock %}
+
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer>
+    <p>Breast Cancer Clinical Decision-Support Platform &bull; PNG Practice Guidelines</p>
+  </footer>
+
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

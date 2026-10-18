@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+
+{% block title %}Assessment #{{ assessment.id }} &bull; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="margin-bottom: 0.5rem;">
+    <a href="/ui/assessments/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to Assessments</a>
+  </div>
+  <div style="display: flex; align-items: center; gap: 1rem;">
+    <h1 class="page-title">Decision Assessment #{{ assessment.id }}</h1>
+    <span class="badge-triage badge-{{ assessment.triage_level|lower }}" style="font-size: 1rem; padding: 0.35rem 0.8rem;">
+      {{ assessment.triage_level }}
+    </span>
+  </div>
+  <p class="page-subtitle">Calculated at {{ assessment.calculated_at|date:"Y-m-d H:i:s" }} UTC</p>
+</div>
+
+<div class="card">
+  <div class="card-title">Recommendation Summary</div>
+  <p style="font-size: 1.1rem; font-weight: 500; color: var(--text-main); margin-bottom: 1rem;">
+    {{ assessment.summary_recommendation }}
+  </p>
+  <dl class="dl-grid">
+    <dt>Patient</dt>
+    <dd><a href="/ui/patients/{{ assessment.encounter.patient.id }}/">Patient #{{ assessment.encounter.patient.id }}</a> (Pseudonym: <code>{{ assessment.encounter.patient.pseudonym_id }}</code>)</dd>
+    <dt>Encounter</dt>
+    <dd>Encounter #{{ assessment.encounter.id }} ({{ assessment.encounter.encounter_type|title }})</dd>
+    <dt>Review Status</dt>
+    <dd>
+      {% if assessment.review_status == "approved" %}
+        <span class="badge-triage badge-routine">Approved</span> by {{ assessment.reviewed_by.username }} on {{ assessment.reviewed_at|date:"Y-m-d H:i" }}
+      {% elif assessment.review_status == "modified" %}
+        <span class="badge-triage badge-priority">Modified</span> by {{ assessment.reviewed_by.username }} on {{ assessment.reviewed_at|date:"Y-m-d H:i" }}
+      {% else %}
+        <span class="pill">Pending Clinician Review</span>
+      {% endif %}
+    </dd>
+  </dl>
+</div>
+
+<div class="card">
+  <div class="card-title">Applied Guidelines &amp; Rule Versions</div>
+  {% for rv in rule_versions %}
+    <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; background-color: #fafafa;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <strong style="font-size: 1.05rem;">
+          {% if rv.decision_rule.guideline_version.guideline %}
+            {{ rv.decision_rule.guideline_version.guideline.title }} &bull; {{ rv.decision_rule.name }}
+          {% else %}
+            Decision Rule {{ rv.decision_rule.rule_code }}
+          {% endif %}
+        </strong>
+        <span class="pill">Version {{ rv.version_number }} ({{ rv.status|title }})</span>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">{{ rv.source_citation|default:rv.decision_rule.description }}</p>
+      {% if rv.logic_spec %}
+        <div style="margin-top: 0.5rem;">
+          <small style="color: var(--text-muted); font-weight: 600;">LOGIC SPECIFICATION:</small>
+          <pre style="background: #1e293b; color: #f8fafc; padding: 0.75rem; border-radius: 4px; font-size: 0.85rem; overflow-x: auto; margin-top: 0.25rem;">{{ rv.logic_spec }}</pre>
+        </div>
+      {% endif %}
+    </div>
+  {% empty %}
+    <p style="color: var(--text-muted);">No specific rule versions attached to this assessment record.</p>
+  {% endfor %}
+</div>
+
+{% if assessment.reasoning_payload %}
+<div class="card">
+  <div class="card-title">Reasoning Payload &amp; Audit Trail</div>
+  <pre style="background: #1e293b; color: #38bdf8; padding: 1rem; border-radius: 6px; font-size: 0.85rem; overflow-x: auto;">{{ assessment.reasoning_payload }}</pre>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+
+{% block title %}Patient #{{ patient.id }} &bull; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="margin-bottom: 0.5rem;">
+    <a href="/ui/patients/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to Patients</a>
+  </div>
+  <h1 class="page-title">Patient Record #{{ patient.id }}</h1>
+  <p class="page-subtitle">Pseudonym ID: <code>{{ patient.pseudonym_id }}</code></p>
+</div>
+
+<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+  <div class="card">
+    <div class="card-title">Pseudonymous Record</div>
+    <dl class="dl-grid">
+      <dt>Patient ID</dt>
+      <dd>#{{ patient.id }}</dd>
+      <dt>Pseudonym</dt>
+      <dd><code>{{ patient.pseudonym_id }}</code></dd>
+      <dt>Year of Birth</dt>
+      <dd>{{ patient.year_of_birth|default:"—" }}</dd>
+      <dt>Sex</dt>
+      <dd>{{ patient.get_sex_display|default:patient.sex }}</dd>
+      <dt>Region</dt>
+      <dd>{{ patient.region|default:"—" }}</dd>
+      <dt>Registered</dt>
+      <dd>{{ patient.created_at|date:"Y-m-d H:i" }}</dd>
+    </dl>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Identifiable Patient Data</div>
+    {% if can_view_identity %}
+      {% if identity %}
+        <dl class="dl-grid">
+          <dt>Full Name</dt>
+          <dd><strong>{{ identity.full_name }}</strong></dd>
+          <dt>MRN / National ID</dt>
+          <dd><code>{{ identity.national_id_or_mrn }}</code></dd>
+          <dt>Date of Birth</dt>
+          <dd>{{ identity.date_of_birth|default:"—" }}</dd>
+          <dt>Phone Number</dt>
+          <dd>{{ identity.phone_number|default:"—" }}</dd>
+          <dt>Address</dt>
+          <dd>{{ identity.address|default:"—" }}</dd>
+        </dl>
+      {% else %}
+        <p style="color: var(--text-muted);">No linked identity record found.</p>
+      {% endif %}
+    {% else %}
+      <div style="background-color: #f1f5f9; padding: 1rem; border-radius: 6px; color: var(--text-muted); font-size: 0.9rem;">
+        🔒 Identifiable data requires <code>view_patient_identity</code> permission.
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="card-title">Clinical Encounters &amp; Investigations</div>
+  {% for encounter in encounters %}
+    <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 1.25rem; margin-bottom: 1.5rem; background-color: #fafafa;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+        <div>
+          <strong style="font-size: 1.1rem;">Encounter #{{ encounter.id }}</strong>
+          <span class="pill" style="margin-left: 0.5rem;">{{ encounter.encounter_type|title }}</span>
+        </div>
+        <span style="color: var(--text-muted); font-size: 0.9rem;">
+          {{ encounter.encounter_date|date:"Y-m-d H:i" }} {% if encounter.recorded_by %}(By: {{ encounter.recorded_by.username }}){% endif %}
+        </span>
+      </div>
+
+      <!-- Imaging -->
+      {% if encounter.imaging_list %}
+        <div style="margin-bottom: 1rem;">
+          <h4 style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.5rem;">Imaging Reports</h4>
+          {% for img in encounter.imaging_list %}
+            <div style="background: white; padding: 0.75rem; border-radius: 4px; border: 1px solid #e2e8f0; margin-bottom: 0.5rem;">
+              <strong>Modality:</strong> {{ img.modality|upper }} | <strong>BI-RADS:</strong> Category {{ img.birads_category }}
+              <br><small style="color: var(--text-muted);">{{ img.impression }}</small>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Histopathology & Biomarkers -->
+      {% if encounter.histo_list %}
+        <div style="margin-bottom: 1rem;">
+          <h4 style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.5rem;">Histopathology &amp; Biomarkers</h4>
+          {% for h in encounter.histo_list %}
+            <div style="background: white; padding: 0.75rem; border-radius: 4px; border: 1px solid #e2e8f0; margin-bottom: 0.5rem;">
+              <strong>Specimen:</strong> {{ h.specimen_type }} | <strong>Type:</strong> {{ h.histological_type }} (Grade {{ h.grade }})
+              {% if h.biomarker_data %}
+                <div style="margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #e2e8f0; font-size: 0.9rem;">
+                  <span class="pill">ER: {{ h.biomarker_data.er_status|upper }}</span>
+                  <span class="pill">PR: {{ h.biomarker_data.pr_status|upper }}</span>
+                  <span class="pill">HER2: {{ h.biomarker_data.her2_status|upper }}</span>
+                  {% if h.biomarker_data.ki67_index %}<span class="pill">Ki67: {{ h.biomarker_data.ki67_index }}%</span>{% endif %}
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Staging -->
+      {% if encounter.staging_list %}
+        <div style="margin-bottom: 1rem;">
+          <h4 style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.5rem;">Staging Assessments</h4>
+          {% for stg in encounter.staging_list %}
+            <div style="background: white; padding: 0.75rem; border-radius: 4px; border: 1px solid #e2e8f0; margin-bottom: 0.5rem;">
+              <strong>T stage:</strong> {{ stg.t_stage }} | <strong>N stage:</strong> {{ stg.n_stage }} | <strong>M stage:</strong> {{ stg.m_stage }} &rarr; <strong>Overall Stage {{ stg.overall_stage }}</strong>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Decision Support Assessments -->
+      {% if encounter.dsa_list %}
+        <div>
+          <h4 style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.5rem;">Decision Support Triage Assessments</h4>
+          {% for dsa in encounter.dsa_list %}
+            <div style="background: white; padding: 0.75rem; border-radius: 4px; border: 1px solid #e2e8f0; margin-bottom: 0.5rem;">
+              <div style="display: flex; justify-content: space-between; align-items: center;">
+                <span class="badge-triage badge-{{ dsa.triage_level|lower }}">{{ dsa.triage_level }}</span>
+                <a href="/ui/assessments/{{ dsa.id }}/" class="btn-sm btn-primary">Assessment #{{ dsa.id }} Details &rarr;</a>
+              </div>
+              <p style="margin-top: 0.5rem; font-size: 0.95rem;">{{ dsa.summary_recommendation }}</p>
+              <div style="margin-top: 0.5rem; font-size: 0.85rem; color: var(--text-muted);">
+                <strong>Clinician Review Status:</strong>
+                {% if dsa.review_status == "approved" %}
+                  <span style="color: var(--routine); font-weight: 600;">Approved</span> by {{ dsa.reviewed_by.username }} on {{ dsa.reviewed_at|date:"Y-m-d" }}
+                {% elif dsa.review_status == "modified" %}
+                  <span style="color: var(--priority); font-weight: 600;">Modified</span> by {{ dsa.reviewed_by.username }} on {{ dsa.reviewed_at|date:"Y-m-d" }}
+                {% else %}
+                  <span style="color: var(--text-muted); font-weight: 600;">Pending Review</span>
+                {% endif %}
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  {% empty %}
+    <p style="color: var(--text-muted); text-align: center; padding: 1.5rem;">No clinical encounters recorded for this patient.</p>
+  {% endfor %}
+</div>
+{% endblock %}
