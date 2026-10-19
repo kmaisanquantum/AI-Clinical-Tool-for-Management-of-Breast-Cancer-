@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block title %}{% if is_create %}Create User{% else %}Edit User: {{ target_user.username }}{% endif %} &bull; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div style="margin-bottom: 0.5rem;">
+    <a href="/ui/settings/users/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to Users List</a>
+  </div>
+  <h1 class="page-title">{% if is_create %}Create New User Account{% else %}Edit User: {{ target_user.username }}{% endif %}</h1>
+  <p class="page-subtitle">Configure user account details, credentials, and role assignments.</p>
+</div>
+
+<div class="card">
+  <form method="post">
+    {% csrf_token %}
+    {% if is_create %}
+      <div class="form-group">
+        <label for="{{ form.username.id_for_label }}">Username</label>
+        {{ form.username }}
+      </div>
+    {% endif %}
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="form-group">
+        <label for="{{ form.first_name.id_for_label }}">First Name</label>
+        {{ form.first_name }}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.last_name.id_for_label }}">Last Name</label>
+        {{ form.last_name }}
+      </div>
+    </div>
+    <div class="form-group">
+      <label for="{{ form.email.id_for_label }}">Email Address</label>
+      {{ form.email }}
+    </div>
+
+    {% if is_create %}
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+        <div class="form-group">
+          <label for="{{ form.password.id_for_label }}">Password</label>
+          {{ form.password }}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.confirm_password.id_for_label }}">Confirm Password</label>
+          {{ form.confirm_password }}
+        </div>
+      </div>
+    {% endif %}
+
+    <div class="form-group" style="margin-top: 1rem;">
+      <label style="margin-bottom: 0.5rem;">Assigned System Roles</label>
+      <div style="background: #f8fafc; padding: 1rem; border-radius: 6px; border: 1px solid var(--border-color);">
+        {{ form.roles }}
+      </div>
+    </div>
+
+    <div class="form-group" style="margin-top: 1rem;">
+      <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+        {{ form.is_active }} Active Account Status
+      </label>
+    </div>
+
+    <div style="margin-top: 1.5rem;">
+      <button type="submit" class="btn-sm btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.95rem;">
+        {% if is_create %}Create User Account{% else %}Save User Changes{% endif %}
+      </button>
+      <a href="/ui/settings/users/" class="btn-sm btn-outline" style="color: var(--text-main); border-color: var(--border-color); margin-left: 0.5rem;">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

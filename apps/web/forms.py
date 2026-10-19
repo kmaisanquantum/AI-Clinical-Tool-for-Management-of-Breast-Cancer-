@@ -92,3 +92,75 @@ class ClinicianReviewForm(forms.ModelForm):
             "clinician_action_taken": forms.TextInput(attrs={"class": "form-control", "placeholder": "Action taken..."}),
             "notes": forms.Textarea(attrs={"class": "form-control", "rows": 2, "placeholder": "Clinical justification..."}),
         }
+
+
+class UserCreateForm(forms.ModelForm):
+    password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}), required=True)
+    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}), required=True)
+    roles = forms.ModelMultipleChoiceField(
+        queryset=None,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+    )
+
+    class Meta:
+        from apps.accounts.models import User
+        model = User
+        fields = ("username", "first_name", "last_name", "email", "is_active")
+        widgets = {
+            "username": forms.TextInput(attrs={"class": "form-control"}),
+            "first_name": forms.TextInput(attrs={"class": "form-control"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "is_active": forms.CheckboxInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.accounts.models import Role
+        self.fields["roles"].queryset = Role.objects.all().order_by("name")
+
+    def clean(self):
+        cleaned_data = super().clean()
+        p1 = cleaned_data.get("password")
+        p2 = cleaned_data.get("confirm_password")
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError("Passwords do not match.")
+        return cleaned_data
+
+
+class UserEditForm(forms.ModelForm):
+    roles = forms.ModelMultipleChoiceField(
+        queryset=None,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+    )
+
+    class Meta:
+        from apps.accounts.models import User
+        model = User
+        fields = ("first_name", "last_name", "email", "is_active")
+        widgets = {
+            "first_name": forms.TextInput(attrs={"class": "form-control"}),
+            "last_name": forms.TextInput(attrs={"class": "form-control"}),
+            "email": forms.EmailInput(attrs={"class": "form-control"}),
+            "is_active": forms.CheckboxInput(),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.accounts.models import Role
+        self.fields["roles"].queryset = Role.objects.all().order_by("name")
+
+
+class PasswordResetForm(forms.Form):
+    new_password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}), required=True)
+    confirm_password = forms.CharField(widget=forms.PasswordInput(attrs={"class": "form-control"}), required=True)
+
+    def clean(self):
+        cleaned_data = super().clean()
+        p1 = cleaned_data.get("new_password")
+        p2 = cleaned_data.get("confirm_password")
+        if p1 and p2 and p1 != p2:
+            raise forms.ValidationError("Passwords do not match.")
+        return cleaned_data

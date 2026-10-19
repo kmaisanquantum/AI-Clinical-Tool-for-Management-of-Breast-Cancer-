@@ -20,6 +20,12 @@ urlpatterns = [
     path("encounters/<int:pk>/", views.encounter_detail, name="encounter-detail"),
     path("triage/", views.triage, name="triage"),
     path("audit/", views.audit, name="audit"),
+    path("settings/users/", views.user_list, name="user-list"),
+    path("settings/users/new/", views.user_create, name="user-create"),
+    path("settings/users/<int:pk>/edit/", views.user_edit, name="user-edit"),
+    path("settings/users/<int:pk>/reset-password/", views.user_password_reset, name="user-password-reset"),
+    path("settings/users/<int:pk>/toggle-active/", views.user_toggle_active, name="user-toggle-active"),
+    path("settings/roles/", views.role_list, name="role-list"),
     path(
         "login/",
         auth_views.LoginView.as_view(template_name="web/login.html"),

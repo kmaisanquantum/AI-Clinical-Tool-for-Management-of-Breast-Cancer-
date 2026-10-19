@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block title %}User Management &bull; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <h1 class="page-title">User &amp; Account Management</h1>
+    <p class="page-subtitle">Admin area for managing system accounts, roles, and access credentials.</p>
+  </div>
+  <div>
+    <a href="/ui/settings/roles/" class="btn-sm btn-outline" style="color: var(--primary); border-color: var(--primary); margin-right: 0.5rem;">View System Roles &rarr;</a>
+    <a href="/ui/settings/users/new/" class="btn-sm btn-primary">+ Create New User</a>
+  </div>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Username</th>
+        <th>Full Name</th>
+        <th>Email</th>
+        <th>Assigned Roles</th>
+        <th>Status</th>
+        <th>Last Login</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for u in users_list %}
+        <tr>
+          <td>
+            <strong>{{ u.username }}</strong>
+            {% if u.is_superuser %}<span class="pill" style="background-color: #fef3c7; color: #92400e;">Superuser</span>{% endif %}
+          </td>
+          <td>{{ u.get_full_name|default:"—" }}</td>
+          <td>{{ u.email|default:"—" }}</td>
+          <td>
+            {% for ur in u.user_roles.all %}
+              <span class="pill">{{ ur.role.name }}</span>
+            {% empty %}
+              <span style="color: var(--text-muted); font-size: 0.85rem;">No roles assigned</span>
+            {% endfor %}
+          </td>
+          <td>
+            {% if u.is_active %}
+              <span class="badge-triage badge-routine">Active</span>
+            {% else %}
+              <span class="badge-triage badge-urgent">Inactive</span>
+            {% endif %}
+          </td>
+          <td>{{ u.last_login|date:"Y-m-d H:i"|default:"Never" }}</td>
+          <td>
+            <a href="/ui/settings/users/{{ u.id }}/edit/" class="btn-sm btn-outline" style="color: var(--primary); border-color: var(--primary); margin-right: 0.25rem;">Edit</a>
+            <a href="/ui/settings/users/{{ u.id }}/reset-password/" class="btn-sm btn-outline" style="color: var(--text-main); border-color: var(--border-color); margin-right: 0.25rem;">Reset Pass</a>
+            {% if u != request.user %}
+              <form method="post" action="/ui/settings/users/{{ u.id }}/toggle-active/" style="display:inline;">
+                {% csrf_token %}
+                <button type="submit" class="btn-sm {% if u.is_active %}btn-outline{% else %}btn-primary{% endif %}" style="{% if u.is_active %}color: var(--urgent); border-color: var(--urgent);{% endif %}">
+                  {% if u.is_active %}Deactivate{% else %}Activate{% endif %}
+                </button>
+              </form>
+            {% endif %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No user accounts found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
