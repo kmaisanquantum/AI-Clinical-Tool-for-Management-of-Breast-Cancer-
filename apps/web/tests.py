@@ -435,3 +435,28 @@ def test_change_own_password_view(client):
 
     from apps.audit.models import AuditEvent
     assert AuditEvent.objects.filter(resource_type="User", resource_id=str(user.id), details__action="change_own_password").exists()
+
+
+@pytest.mark.django_db
+def test_navbar_visibility_for_settings(client):
+    normal_user = User.objects.create_user(username="regular_user", password="test-pass-1234")
+    admin_user = User.objects.create_user(username="admin_user", password="test-pass-1234")
+    admin_role = Role.objects.create(name="User Admin")
+    RolePermission.objects.create(role=admin_role, permission_code="manage_users")
+    UserRole.objects.create(user=admin_user, role=admin_role)
+    superuser = User.objects.create_superuser(username="superuser", password="test-pass-1234")
+
+    # Regular user does not see Settings in navbar
+    client.force_login(normal_user)
+    resp = client.get("/")
+    assert b"Settings" not in resp.content
+
+    # Admin user sees Settings link in navbar
+    client.force_login(admin_user)
+    resp = client.get("/")
+    assert b"Settings" in resp.content
+
+    # Superuser sees Settings link in navbar
+    client.force_login(superuser)
+    resp = client.get("/")
+    assert b"Settings" in resp.content
