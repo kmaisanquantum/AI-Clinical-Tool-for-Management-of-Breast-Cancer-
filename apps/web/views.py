@@ -573,3 +573,31 @@ def role_list(request):
     from apps.accounts.models import Role
     roles = Role.objects.all().prefetch_related("permissions").order_by("name")
     return _page(request, "web/role_list.html", "settings", roles_list=roles)
+
+
+@login_required
+def user_change_own_password(request):
+    if request.method == "POST":
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            request.user.set_password(form.cleaned_data["new_password"])
+            request.user.save()
+
+            AuditEvent.objects.create(
+                user=request.user,
+                action="UPDATE",
+                resource_type="User",
+                resource_id=str(request.user.id),
+                details={"action": "change_own_password", "username": request.user.username},
+            )
+
+            # Re-authenticate user session after password change
+            from django.contrib.auth import update_session_auth_hash
+            update_session_auth_hash(request, request.user)
+
+            messages.success(request, "Your password has been changed successfully.")
+            return redirect("/ui/settings/users/me/")
+    else:
+        form = PasswordResetForm()
+
+    return _page(request, "web/user_own_password_change.html", "settings", form=form)

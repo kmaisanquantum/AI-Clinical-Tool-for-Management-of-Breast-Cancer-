@@ -294,7 +294,7 @@
       <li><a href="/ui/patients/" class="{% if '/ui/patients/' in request.path %}active{% endif %}">Patients</a></li>
       <li><a href="/ui/assessments/" class="{% if '/ui/assessments/' in request.path %}active{% endif %}">Assessments</a></li>
       <li><a href="/ui/triage/" class="{% if '/ui/triage/' in request.path %}active{% endif %}">Triage Worklist</a></li>
-      {% if can_manage_users %}
+      {% if can_manage_users or request.user.is_superuser %}
         <li><a href="/ui/settings/users/" class="{% if '/ui/settings/' in request.path %}active{% endif %}">Settings</a></li>
       {% endif %}
       <li><a href="/api/v1/docs/" target="_blank">API Reference</a></li>

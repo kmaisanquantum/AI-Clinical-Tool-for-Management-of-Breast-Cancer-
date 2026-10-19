@@ -415,3 +415,23 @@ def test_settings_user_management_permissions_and_workflow(client):
     assert deactivate_res.status_code == 302
     created_user.refresh_from_db()
     assert created_user.is_active is False
+
+
+@pytest.mark.django_db
+def test_change_own_password_view(client):
+    user = User.objects.create_user(username="self_user", password="OldPassword123!")
+    client.force_login(user)
+
+    res = client.post(
+        "/ui/settings/users/me/",
+        {
+            "new_password": "NewSecretPassword123!",
+            "confirm_password": "NewSecretPassword123!",
+        },
+    )
+    assert res.status_code == 302
+    user.refresh_from_db()
+    assert user.check_password("NewSecretPassword123!")
+
+    from apps.audit.models import AuditEvent
+    assert AuditEvent.objects.filter(resource_type="User", resource_id=str(user.id), details__action="change_own_password").exists()
