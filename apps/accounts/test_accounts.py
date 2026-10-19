@@ -62,3 +62,27 @@ def test_create_demo_user_command_idempotent_and_authenticates(client):
 
     login_success = client.login(username="doctor", password="doctor")
     assert login_success is True
+
+
+@pytest.mark.django_db
+def test_create_demo_user_admin_flag():
+    from django.core.management import call_command
+
+    call_command("create_demo_user", username="clinician_admin_test", password="pass", role="Oncologist", admin=True)
+    user = User.objects.get(username="clinician_admin_test")
+    assert user_has_permission(user, "manage_users")
+
+
+@pytest.mark.django_db
+def test_seed_demo_grants_manage_users_idempotently():
+    from django.core.management import call_command
+
+    # First run
+    call_command("seed_demo")
+    doctor = User.objects.get(username="doctor")
+    assert user_has_permission(doctor, "manage_users")
+
+    # Second run on existing DB
+    call_command("seed_demo")
+    doctor.refresh_from_db()
+    assert user_has_permission(doctor, "manage_users")

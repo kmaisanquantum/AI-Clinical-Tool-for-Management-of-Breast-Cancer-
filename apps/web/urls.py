@@ -22,6 +22,7 @@ urlpatterns = [
     path("audit/", views.audit, name="audit"),
     path("settings/users/", views.user_list, name="user-list"),
     path("settings/users/new/", views.user_create, name="user-create"),
+    path("settings/users/me/", views.user_change_own_password, name="user-change-own-password"),
     path("settings/users/<int:pk>/edit/", views.user_edit, name="user-edit"),
     path("settings/users/<int:pk>/reset-password/", views.user_password_reset, name="user-password-reset"),
     path("settings/users/<int:pk>/toggle-active/", views.user_toggle_active, name="user-toggle-active"),
