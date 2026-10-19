@@ -20,7 +20,7 @@
         {{ form.username }}
       </div>
     {% endif %}
-    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+    <div class="grid-2">
       <div class="form-group">
         <label for="{{ form.first_name.id_for_label }}">First Name</label>
         {{ form.first_name }}
@@ -36,7 +36,7 @@
     </div>
 
     {% if is_create %}
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+      <div class="grid-2">
         <div class="form-group">
           <label for="{{ form.password.id_for_label }}">Password</label>
           {{ form.password }}
@@ -56,16 +56,16 @@
     </div>
 
     <div class="form-group" style="margin-top: 1rem;">
-      <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600;">
+      <label style="display: flex; align-items: center; gap: 0.5rem; font-weight: 600; min-height: 44px; cursor: pointer;">
         {{ form.is_active }} Active Account Status
       </label>
     </div>
 
-    <div style="margin-top: 1.5rem;">
-      <button type="submit" class="btn-sm btn-primary" style="padding: 0.6rem 1.2rem; font-size: 0.95rem;">
+    <div class="btn-group-mobile" style="margin-top: 1.5rem; display: flex; gap: 0.75rem; flex-wrap: wrap;">
+      <button type="submit" class="btn btn-primary">
         {% if is_create %}Create User Account{% else %}Save User Changes{% endif %}
       </button>
-      <a href="/ui/settings/users/" class="btn-sm btn-outline" style="color: var(--text-main); border-color: var(--border-color); margin-left: 0.5rem;">Cancel</a>
+      <a href="/ui/settings/users/" class="btn btn-secondary">Cancel</a>
     </div>
   </form>
 </div>

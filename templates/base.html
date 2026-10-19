@@ -12,13 +12,13 @@
       --bg-slate: #f8fafc;
       --card-bg: #ffffff;
       --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border-color: #e2e8f0;
-      --urgent: #be123c;
+      --text-muted: #475569;
+      --border-color: #cbd5e1;
+      --urgent: #9f1239;
       --urgent-bg: #ffe4e6;
-      --priority: #d97706;
+      --priority: #92400e;
       --priority-bg: #fef3c7;
-      --routine: #15803d;
+      --routine: #166534;
       --routine-bg: #dcfce7;
     }
 
@@ -28,8 +28,10 @@
       background-color: var(--bg-slate);
       color: var(--text-main);
       line-height: 1.5;
+      font-size: 1rem;
     }
 
+    /* NAVIGATION HEADER */
     .navbar {
       background-color: #0f172a;
       color: #ffffff;
@@ -37,7 +39,9 @@
       justify-content: space-between;
       align-items: center;
       padding: 0.75rem 1.5rem;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+      position: relative;
+      flex-wrap: wrap;
     }
 
     .nav-brand {
@@ -53,7 +57,7 @@
     .nav-brand .badge {
       background-color: var(--primary);
       color: #ffffff;
-      padding: 0.2rem 0.5rem;
+      padding: 0.25rem 0.5rem;
       border-radius: 4px;
       font-size: 0.8rem;
     }
@@ -70,11 +74,13 @@
       text-decoration: none;
       font-size: 0.95rem;
       font-weight: 500;
+      padding: 0.4rem 0.2rem;
       transition: color 0.15s;
     }
 
     .nav-links a:hover, .nav-links a.active {
       color: #ffffff;
+      border-bottom: 2px solid var(--primary-hover);
     }
 
     .nav-user {
@@ -88,39 +94,83 @@
       color: #94a3b8;
     }
 
-    .btn-sm {
-      padding: 0.35rem 0.75rem;
-      font-size: 0.85rem;
+    /* HAMBURGER TOGGLE BUTTON */
+    .nav-toggle {
+      display: none;
+      background: transparent;
+      border: 1px solid #475569;
       border-radius: 4px;
-      border: none;
+      padding: 0.5rem;
       cursor: pointer;
-      text-decoration: none;
-      display: inline-block;
+      min-height: 44px;
+      min-width: 44px;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 5px;
     }
 
-    .btn-primary { background-color: var(--primary); color: white; }
-    .btn-primary:hover { background-color: var(--primary-hover); }
-    .btn-outline { background-color: transparent; border: 1px solid #475569; color: #f8fafc; }
-    .btn-outline:hover { background-color: #334155; }
+    .hamburger-bar {
+      width: 22px;
+      height: 2px;
+      background-color: #ffffff;
+      border-radius: 1px;
+      transition: all 0.2s ease;
+    }
 
+    /* BUTTONS */
+    .btn, .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.95rem;
+      border-radius: 6px;
+      border: 1px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 44px;
+      font-weight: 600;
+      box-sizing: border-box;
+    }
+
+    .btn-sm {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.875rem;
+      min-height: 38px;
+    }
+
+    .btn-primary { background-color: var(--primary); color: #ffffff; }
+    .btn-primary:hover { background-color: var(--primary-hover); }
+    .btn-outline { background-color: transparent; border-color: #64748b; color: #f8fafc; }
+    .btn-outline:hover { background-color: #334155; }
+    .btn-secondary { background-color: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }
+    .btn-secondary:hover { background-color: #cbd5e1; }
+    .btn-danger { background-color: #be123c; color: #ffffff; }
+    .btn-danger:hover { background-color: #9f1239; }
+
+    /* LAYOUT CONTAINERS */
     .banner {
       background-color: #fef3c7;
       border-bottom: 1px solid #fde68a;
-      color: #92400e;
-      padding: 0.5rem 1.5rem;
+      color: #78350f;
+      padding: 0.5rem 1rem;
       font-size: 0.85rem;
       text-align: center;
-      font-weight: 500;
+      font-weight: 600;
     }
 
     .container {
       max-width: 1100px;
-      margin: 2rem auto;
+      margin: 1.5rem auto;
       padding: 0 1rem;
     }
 
     .page-header {
       margin-bottom: 1.5rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
     }
 
     .page-title {
@@ -132,63 +182,44 @@
     .page-subtitle {
       color: var(--text-muted);
       font-size: 0.95rem;
-      margin-top: 0.25rem;
     }
 
     .alert {
-      padding: 0.75rem 1rem;
+      padding: 0.85rem 1rem;
       border-radius: 6px;
-      margin-bottom: 1.5rem;
+      margin-bottom: 1.25rem;
       font-size: 0.95rem;
+      font-weight: 500;
     }
 
-    .alert-success { background-color: #dcfce7; border: 1px solid #bbf7d0; color: #166534; }
-    .alert-error { background-color: #ffe4e6; border: 1px solid #fecdd3; color: #9f1239; }
+    .alert-success { background-color: #dcfce7; border: 1px solid #86efac; color: #14532d; }
+    .alert-error { background-color: #ffe4e6; border: 1px solid #fca5a5; color: #881337; }
 
     .card {
       background-color: var(--card-bg);
       border: 1px solid var(--border-color);
       border-radius: 8px;
-      padding: 1.5rem;
-      margin-bottom: 1.5rem;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
     .card-title {
       font-size: 1.15rem;
-      font-weight: 600;
+      font-weight: 700;
       margin-bottom: 1rem;
       color: var(--text-main);
       display: flex;
       justify-content: space-between;
       align-items: center;
+      flex-wrap: wrap;
+      gap: 0.5rem;
     }
 
-    .form-group {
-      margin-bottom: 1rem;
-    }
-
-    .form-group label {
-      display: block;
-      font-weight: 600;
-      font-size: 0.875rem;
-      margin-bottom: 0.25rem;
-    }
-
-    .form-control {
-      width: 100%;
-      padding: 0.5rem;
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      font-size: 0.95rem;
-    }
-
-    .grid-4 {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.5rem;
-    }
+    /* GRIDS */
+    .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+    .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.25rem; }
 
     .stat-box {
       background: var(--card-bg);
@@ -211,57 +242,103 @@
       letter-spacing: 0.05em;
     }
 
+    /* FORMS */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group label {
+      display: block;
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 0.35rem;
+      color: var(--text-main);
+    }
+
+    .form-control, input[type="text"], input[type="number"], input[type="email"], input[type="password"], select, textarea {
+      width: 100%;
+      padding: 0.6rem 0.75rem;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 0.95rem;
+      background-color: #ffffff;
+      color: var(--text-main);
+      min-height: 44px;
+      box-sizing: border-box;
+    }
+
+    textarea.form-control {
+      min-height: 100px;
+    }
+
+    /* TABLES & TABLE RESPONSIVE */
+    .table-responsive {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-bottom: 1.25rem;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.95rem;
+      background: #ffffff;
     }
 
     th, td {
-      padding: 0.75rem 1rem;
+      padding: 0.75rem 0.85rem;
       text-align: left;
       border-bottom: 1px solid var(--border-color);
     }
 
     th {
       background-color: #f1f5f9;
-      color: var(--text-muted);
-      font-weight: 600;
+      color: #334155;
+      font-weight: 700;
       font-size: 0.85rem;
       text-transform: uppercase;
+      white-space: nowrap;
     }
 
     tr:hover { background-color: #f8fafc; }
 
+    /* BADGES & PILLS */
     .badge-triage {
       padding: 0.25rem 0.6rem;
       border-radius: 12px;
       font-size: 0.75rem;
       font-weight: 700;
       display: inline-block;
+      text-transform: uppercase;
     }
 
-    .badge-urgent { background-color: var(--urgent-bg); color: var(--urgent); }
-    .badge-priority { background-color: var(--priority-bg); color: var(--priority); }
-    .badge-routine { background-color: var(--routine-bg); color: var(--routine); }
+    .badge-urgent { background-color: var(--urgent-bg); color: var(--urgent); border: 1px solid #fca5a5; }
+    .badge-priority { background-color: var(--priority-bg); color: var(--priority); border: 1px solid #fcd34d; }
+    .badge-routine { background-color: var(--routine-bg); color: var(--routine); border: 1px solid #86efac; }
 
     .pill {
       background: #e2e8f0;
-      color: #334155;
+      color: #1e293b;
       padding: 0.2rem 0.5rem;
       border-radius: 4px;
       font-size: 0.8rem;
+      font-weight: 600;
     }
 
+    /* DEFINITION GRIDS */
     .dl-grid {
       display: grid;
       grid-template-columns: 180px 1fr;
       row-gap: 0.75rem;
+      column-gap: 1rem;
       font-size: 0.95rem;
     }
 
     .dl-grid dt {
-      font-weight: 600;
+      font-weight: 700;
       color: var(--text-muted);
     }
 
@@ -271,13 +348,91 @@
       padding: 0.15rem 0.4rem;
       border-radius: 4px;
       font-size: 0.875rem;
+      word-break: break-all;
     }
 
     footer {
       text-align: center;
-      padding: 2rem;
+      padding: 2rem 1rem;
       color: var(--text-muted);
       font-size: 0.85rem;
+    }
+
+    /* MEDIA QUERIES FOR TABLET & MOBILE (< 768px) */
+    @media (max-width: 768px) {
+      .nav-toggle {
+        display: flex;
+      }
+
+      .nav-links {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #334155;
+        margin-top: 0.5rem;
+      }
+
+      .nav-links.open {
+        display: flex;
+      }
+
+      .nav-links a {
+        width: 100%;
+        padding: 0.6rem 0.5rem;
+        font-size: 1rem;
+      }
+
+      .nav-user {
+        width: 100%;
+        justify-content: space-between;
+        padding-top: 0.5rem;
+        border-top: 1px solid #334155;
+        margin-top: 0.5rem;
+      }
+
+      .container {
+        padding: 0 0.75rem;
+        margin: 1rem auto;
+      }
+
+      .page-title {
+        font-size: 1.4rem;
+      }
+
+      .grid-2, .grid-3, .grid-4 {
+        grid-template-columns: 1fr;
+      }
+
+      .dl-grid {
+        grid-template-columns: 1fr;
+        row-gap: 0.35rem;
+      }
+
+      .dl-grid dt {
+        margin-top: 0.5rem;
+      }
+
+      .card {
+        padding: 1rem;
+      }
+
+      .card-title {
+        font-size: 1.05rem;
+      }
+
+      .btn-group-mobile {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        width: 100%;
+      }
+
+      .btn-group-mobile .btn {
+        width: 100%;
+      }
     }
   </style>
   {% block extra_head %}{% endblock %}
@@ -289,7 +444,14 @@
       <span class="badge">CDS</span>
       <span>Breast Cancer Decision Support</span>
     </a>
-    <ul class="nav-links">
+
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation" aria-expanded="false">
+      <span class="hamburger-bar"></span>
+      <span class="hamburger-bar"></span>
+      <span class="hamburger-bar"></span>
+    </button>
+
+    <ul class="nav-links" id="navLinks">
       <li><a href="/" class="{% if request.path == '/' %}active{% endif %}">Dashboard</a></li>
       <li><a href="/ui/patients/" class="{% if '/ui/patients/' in request.path %}active{% endif %}">Patients</a></li>
       <li><a href="/ui/assessments/" class="{% if '/ui/assessments/' in request.path %}active{% endif %}">Assessments</a></li>
@@ -299,6 +461,7 @@
       {% endif %}
       <li><a href="/api/v1/docs/" target="_blank">API Reference</a></li>
     </ul>
+
     <div class="nav-user">
       {% if request.user.is_authenticated %}
         <span>{{ request.user.username }}</span>
@@ -333,6 +496,18 @@
     <p>Breast Cancer Clinical Decision-Support Platform &bull; PNG Practice Guidelines</p>
   </footer>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var toggle = document.getElementById('navToggle');
+      var links = document.getElementById('navLinks');
+      if (toggle && links) {
+        toggle.addEventListener('click', function() {
+          var isOpen = links.classList.toggle('open');
+          toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+        });
+      }
+    });
+  </script>
   {% block extra_scripts %}{% endblock %}
 </body>
 </html>

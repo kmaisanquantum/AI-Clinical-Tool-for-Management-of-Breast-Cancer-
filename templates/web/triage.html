@@ -10,84 +10,88 @@
 
 <div class="card">
   <div class="card-title">1. Pending Encounters (Awaiting Triage Evaluation)</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Encounter ID</th>
-        <th>Patient</th>
-        <th>Encounter Type</th>
-        <th>Recorded Date</th>
-        <th>Recorded By</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for enc in pending_encounters %}
+  <div class="table-responsive">
+    <table>
+      <thead>
         <tr>
-          <td>#{{ enc.id }}</td>
-          <td><a href="/ui/patients/{{ enc.patient.id }}/">Patient #{{ enc.patient.id }}</a></td>
-          <td><span class="pill">{{ enc.encounter_type|title }}</span></td>
-          <td>{{ enc.encounter_date|date:"Y-m-d H:i" }}</td>
-          <td>{{ enc.recorded_by.username|default:"—" }}</td>
-          <td>
-            {% if can_record_clinical %}
-              <form method="post" action="/ui/encounters/{{ enc.id }}/evaluate/" style="display:inline;">
-                {% csrf_token %}
-                <button type="submit" class="btn-sm btn-primary">Run Triage Assessment &rarr;</button>
-              </form>
-            {% else %}
-              <a href="/ui/patients/{{ enc.patient.id }}/" class="btn-sm btn-outline" style="color: var(--text-main); border-color: var(--border-color);">View Record</a>
-            {% endif %}
-          </td>
+          <th>Encounter ID</th>
+          <th>Patient</th>
+          <th>Encounter Type</th>
+          <th>Recorded Date</th>
+          <th>Recorded By</th>
+          <th>Action</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-            No pending encounters awaiting triage evaluation.
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for enc in pending_encounters %}
+          <tr>
+            <td>#{{ enc.id }}</td>
+            <td><a href="/ui/patients/{{ enc.patient.id }}/">Patient #{{ enc.patient.id }}</a></td>
+            <td><span class="pill">{{ enc.encounter_type|title }}</span></td>
+            <td>{{ enc.encounter_date|date:"Y-m-d H:i" }}</td>
+            <td>{{ enc.recorded_by.username|default:"—" }}</td>
+            <td>
+              {% if can_record_clinical %}
+                <form method="post" action="/ui/encounters/{{ enc.id }}/evaluate/" style="display:inline;">
+                  {% csrf_token %}
+                  <button type="submit" class="btn-sm btn-primary">Run Triage Assessment &rarr;</button>
+                </form>
+              {% else %}
+                <a href="/ui/patients/{{ enc.patient.id }}/" class="btn-sm btn-secondary">View Record</a>
+              {% endif %}
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              No pending encounters awaiting triage evaluation.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 
 <div class="card">
   <div class="card-title">2. Triage Assessments Awaiting Clinician Review</div>
-  <table>
-    <thead>
-      <tr>
-        <th>Assessment ID</th>
-        <th>Triage Level</th>
-        <th>Patient</th>
-        <th>Molecular Subtype</th>
-        <th>Calculated At</th>
-        <th>Status</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for a in pending_assessments %}
+  <div class="table-responsive">
+    <table>
+      <thead>
         <tr>
-          <td>#{{ a.id }}</td>
-          <td>
-            <span class="badge-triage badge-{{ a.triage_level|lower }}">
-              {{ a.triage_level }}
-            </span>
-          </td>
-          <td><a href="/ui/patients/{{ a.encounter.patient.id }}/">Patient #{{ a.encounter.patient.id }}</a></td>
-          <td>{{ a.molecular_subtype|default:"Incomplete" }}</td>
-          <td>{{ a.calculated_at|date:"Y-m-d H:i" }}</td>
-          <td><span class="pill" style="background-color: #fef3c7; color: #92400e;">Pending Review</span></td>
-          <td><a href="/ui/assessments/{{ a.id }}/" class="btn-sm btn-primary">Review Assessment &rarr;</a></td>
+          <th>Assessment ID</th>
+          <th>Triage Level</th>
+          <th>Patient</th>
+          <th>Molecular Subtype</th>
+          <th>Calculated At</th>
+          <th>Status</th>
+          <th>Action</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
-            No triage assessments awaiting clinician review.
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for a in pending_assessments %}
+          <tr>
+            <td>#{{ a.id }}</td>
+            <td>
+              <span class="badge-triage badge-{{ a.triage_level|lower }}">
+                {{ a.triage_level }}
+              </span>
+            </td>
+            <td><a href="/ui/patients/{{ a.encounter.patient.id }}/">Patient #{{ a.encounter.patient.id }}</a></td>
+            <td>{{ a.molecular_subtype|default:"Incomplete" }}</td>
+            <td>{{ a.calculated_at|date:"Y-m-d H:i" }}</td>
+            <td><span class="pill" style="background-color: #fef3c7; color: #92400e;">Pending Review</span></td>
+            <td><a href="/ui/assessments/{{ a.id }}/" class="btn-sm btn-primary">Review Assessment &rarr;</a></td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">
+              No triage assessments awaiting clinician review.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}

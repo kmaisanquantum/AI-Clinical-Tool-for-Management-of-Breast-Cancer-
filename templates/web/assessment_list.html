@@ -9,49 +9,51 @@
 </div>
 
 <div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Triage Level</th>
-        <th>Patient</th>
-        <th>Summary Recommendation</th>
-        <th>Review Status</th>
-        <th>Calculated At</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for a in assessments %}
+  <div class="table-responsive">
+    <table>
+      <thead>
         <tr>
-          <td>#{{ a.id }}</td>
-          <td>
-            <span class="badge-triage badge-{{ a.triage_level|lower }}">
-              {{ a.triage_level }}
-            </span>
-          </td>
-          <td><a href="/ui/patients/{{ a.encounter.patient.id }}/">#{{ a.encounter.patient.id }}</a></td>
-          <td>{{ a.summary_recommendation|truncatechars:60 }}</td>
-          <td>
-            {% if a.review_status == "approved" %}
-              <span class="badge-triage badge-routine">Approved</span>
-            {% elif a.review_status == "modified" %}
-              <span class="badge-triage badge-priority">Modified</span>
-            {% else %}
-              <span class="pill">Pending Review</span>
-            {% endif %}
-          </td>
-          <td>{{ a.calculated_at|date:"Y-m-d H:i" }}</td>
-          <td><a href="/ui/assessments/{{ a.id }}/" class="btn-sm btn-primary">View Detail</a></td>
+          <th>ID</th>
+          <th>Triage Level</th>
+          <th>Patient</th>
+          <th>Summary Recommendation</th>
+          <th>Review Status</th>
+          <th>Calculated At</th>
+          <th>Action</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="7" style="text-align:center; color: var(--text-muted); padding: 2rem;">
-            No decision assessments found. Run <code>python manage.py seed_demo</code> to populate demo data.
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for a in assessments %}
+          <tr>
+            <td>#{{ a.id }}</td>
+            <td>
+              <span class="badge-triage badge-{{ a.triage_level|lower }}">
+                {{ a.triage_level }}
+              </span>
+            </td>
+            <td><a href="/ui/patients/{{ a.encounter.patient.id }}/">#{{ a.encounter.patient.id }}</a></td>
+            <td>{{ a.summary_recommendation|truncatechars:60 }}</td>
+            <td>
+              {% if a.review_status == "approved" %}
+                <span class="badge-triage badge-routine">Approved</span>
+              {% elif a.review_status == "modified" %}
+                <span class="badge-triage badge-priority">Modified</span>
+              {% else %}
+                <span class="pill">Pending Review</span>
+              {% endif %}
+            </td>
+            <td>{{ a.calculated_at|date:"Y-m-d H:i" }}</td>
+            <td><a href="/ui/assessments/{{ a.id }}/" class="btn-sm btn-primary">View Detail</a></td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center; color: var(--text-muted); padding: 2rem;">
+              No decision assessments found. Run <code>python manage.py seed_demo</code> to populate demo data.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}
