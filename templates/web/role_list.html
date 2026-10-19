@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}System Roles &bull; Breast Cancer CDS{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 1rem;">
+  <div>
+    <div style="margin-bottom: 0.5rem;">
+      <a href="/ui/settings/users/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to User Management</a>
+    </div>
+    <h1 class="page-title">System Roles &amp; Permissions</h1>
+    <p class="page-subtitle">Read-only list of configured roles and their granted permission codes.</p>
+  </div>
+</div>
+
+<div class="card">
+  <table>
+    <thead>
+      <tr>
+        <th>Role Name</th>
+        <th>Description</th>
+        <th>Granted Permissions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in roles_list %}
+        <tr>
+          <td><strong>{{ r.name }}</strong></td>
+          <td>{{ r.description|default:"—" }}</td>
+          <td>
+            {% for p in r.permissions.all %}
+              <span class="pill" style="margin-right: 0.25rem;">{{ p.permission_code }}</span>
+            {% empty %}
+              <span style="color: var(--text-muted); font-size: 0.85rem;">No permissions configured</span>
+            {% endfor %}
+          </td>
+        </tr>
+      {% empty %}
+        <tr><td colspan="3" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">No system roles found.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

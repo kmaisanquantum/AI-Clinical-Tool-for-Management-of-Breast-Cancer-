@@ -27,9 +27,12 @@ from .forms import (
     ClinicianReviewForm,
     EncounterForm,
     HistopathologyReportForm,
+    PasswordResetForm,
     PatientForm,
     PatientIdentityForm,
     StagingAssessmentForm,
+    UserCreateForm,
+    UserEditForm,
 )
 
 
@@ -404,3 +407,169 @@ def triage(request):
 @login_required
 def audit(request):
     return _page(request, "web/audit.html", "audit")
+
+
+# ==============================================================================
+# SETTINGS & USER MANAGEMENT VIEWS
+# ==============================================================================
+
+def _check_manage_users(user):
+    if not (user_has_permission(user, "manage_users") or user.is_superuser):
+        raise PermissionDenied("You do not have permission to manage users.")
+
+
+@login_required
+def user_list(request):
+    _check_manage_users(request.user)
+    from apps.accounts.models import User
+    users = User.objects.all().prefetch_related("user_roles__role").order_by("username")
+    return _page(request, "web/user_list.html", "settings", users_list=users)
+
+
+@login_required
+def user_create(request):
+    _check_manage_users(request.user)
+    from apps.accounts.models import UserRole
+
+    if request.method == "POST":
+        form = UserCreateForm(request.POST)
+        if form.is_valid():
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data["password"])
+            user.save()
+
+            roles = form.cleaned_data.get("roles", [])
+            for r in roles:
+                UserRole.objects.create(user=user, role=r, assigned_by=request.user)
+
+            AuditEvent.objects.create(
+                user=request.user,
+                action="CREATE",
+                resource_type="User",
+                resource_id=str(user.id),
+                details={
+                    "username": user.username,
+                    "email": user.email,
+                    "roles": [r.name for r in roles],
+                },
+            )
+
+            messages.success(request, f"User '{user.username}' created successfully.")
+            return redirect("/ui/settings/users/")
+    else:
+        form = UserCreateForm()
+
+    return _page(request, "web/user_form.html", "settings", form=form, is_create=True)
+
+
+@login_required
+def user_edit(request, pk):
+    _check_manage_users(request.user)
+    from apps.accounts.models import User, UserRole
+
+    target_user = get_object_or_404(User, pk=pk)
+
+    if target_user.is_superuser and not request.user.is_superuser:
+        raise PermissionDenied("Only superusers can edit superuser accounts.")
+
+    if request.method == "POST":
+        form = UserEditForm(request.POST, instance=target_user)
+        if form.is_valid():
+            user = form.save()
+
+            # Re-assign roles
+            UserRole.objects.filter(user=user).delete()
+            roles = form.cleaned_data.get("roles", [])
+            for r in roles:
+                UserRole.objects.create(user=user, role=r, assigned_by=request.user)
+
+            AuditEvent.objects.create(
+                user=request.user,
+                action="UPDATE",
+                resource_type="User",
+                resource_id=str(user.id),
+                details={
+                    "username": user.username,
+                    "is_active": user.is_active,
+                    "roles": [r.name for r in roles],
+                },
+            )
+
+            messages.success(request, f"User '{user.username}' updated successfully.")
+            return redirect("/ui/settings/users/")
+    else:
+        initial_roles = [ur.role for ur in target_user.user_roles.all()]
+        form = UserEditForm(instance=target_user, initial={"roles": initial_roles})
+
+    return _page(request, "web/user_form.html", "settings", form=form, is_create=False, target_user=target_user)
+
+
+@login_required
+def user_password_reset(request, pk):
+    _check_manage_users(request.user)
+    from apps.accounts.models import User
+
+    target_user = get_object_or_404(User, pk=pk)
+
+    if target_user.is_superuser and not request.user.is_superuser:
+        raise PermissionDenied("Only superusers can reset superuser passwords.")
+
+    if request.method == "POST":
+        form = PasswordResetForm(request.POST)
+        if form.is_valid():
+            target_user.set_password(form.cleaned_data["new_password"])
+            target_user.save()
+
+            AuditEvent.objects.create(
+                user=request.user,
+                action="UPDATE",
+                resource_type="User",
+                resource_id=str(target_user.id),
+                details={"action": "password_reset", "username": target_user.username},
+            )
+
+            messages.success(request, f"Password reset for user '{target_user.username}'.")
+            return redirect("/ui/settings/users/")
+    else:
+        form = PasswordResetForm()
+
+    return _page(request, "web/user_password_reset.html", "settings", form=form, target_user=target_user)
+
+
+@login_required
+def user_toggle_active(request, pk):
+    _check_manage_users(request.user)
+    from apps.accounts.models import User
+
+    target_user = get_object_or_404(User, pk=pk)
+
+    if target_user == request.user:
+        messages.error(request, "You cannot deactivate your own account.")
+        return redirect("/ui/settings/users/")
+
+    if target_user.is_superuser and not request.user.is_superuser:
+        raise PermissionDenied("Only superusers can alter active status of superusers.")
+
+    target_user.is_active = not target_user.is_active
+    target_user.save()
+
+    status_str = "activated" if target_user.is_active else "deactivated"
+
+    AuditEvent.objects.create(
+        user=request.user,
+        action="UPDATE",
+        resource_type="User",
+        resource_id=str(target_user.id),
+        details={"action": "toggle_active", "is_active": target_user.is_active, "username": target_user.username},
+    )
+
+    messages.success(request, f"User '{target_user.username}' {status_str}.")
+    return redirect("/ui/settings/users/")
+
+
+@login_required
+def role_list(request):
+    _check_manage_users(request.user)
+    from apps.accounts.models import Role
+    roles = Role.objects.all().prefetch_related("permissions").order_by("name")
+    return _page(request, "web/role_list.html", "settings", roles_list=roles)

@@ -329,3 +329,89 @@ def test_investigation_and_evaluation_workflow(client):
     )
     assert rev_res.status_code == 302
     assert assessment.is_reviewed is True
+
+
+@pytest.mark.django_db
+def test_settings_user_management_permissions_and_workflow(client):
+    admin_user = User.objects.create_user(username="admin_user", password="test-pass-1234")
+    admin_role = Role.objects.create(name="User Admin")
+    RolePermission.objects.create(role=admin_role, permission_code="manage_users")
+    UserRole.objects.create(user=admin_user, role=admin_role)
+
+    unprivileged_user = User.objects.create_user(username="normal_user", password="test-pass-1234")
+    superuser = User.objects.create_superuser(username="root_admin", password="test-pass-1234")
+
+    # 1. Unprivileged user gets 403 on settings URLs
+    client.force_login(unprivileged_user)
+    assert client.get("/ui/settings/users/").status_code == 403
+    assert client.get("/ui/settings/users/new/").status_code == 403
+    assert client.get("/ui/settings/roles/").status_code == 403
+
+    # 2. Admin user can view users list and roles
+    client.force_login(admin_user)
+    assert client.get("/ui/settings/users/").status_code == 200
+    assert client.get("/ui/settings/roles/").status_code == 200
+
+    # 3. Create user
+    create_res = client.post(
+        "/ui/settings/users/new/",
+        {
+            "username": "new_doctor",
+            "first_name": "New",
+            "last_name": "Doctor",
+            "email": "doctor@example.test",
+            "password": "Password12345!",
+            "confirm_password": "Password12345!",
+            "is_active": "on",
+            "roles": [admin_role.id],
+        },
+    )
+    assert create_res.status_code == 302
+    created_user = User.objects.get(username="new_doctor")
+    assert created_user.email == "doctor@example.test"
+    from apps.audit.models import AuditEvent
+    assert AuditEvent.objects.filter(resource_type="User", resource_id=str(created_user.id), action="CREATE").exists()
+
+    # 4. Edit user
+    edit_res = client.post(
+        f"/ui/settings/users/{created_user.id}/edit/",
+        {
+            "first_name": "Updated",
+            "last_name": "Name",
+            "email": "updated@example.test",
+            "is_active": "on",
+            "roles": [],
+        },
+    )
+    assert edit_res.status_code == 302
+    created_user.refresh_from_db()
+    assert created_user.first_name == "Updated"
+
+    # 5. Reset password
+    reset_res = client.post(
+        f"/ui/settings/users/{created_user.id}/reset-password/",
+        {
+            "new_password": "NewSecretPassword1!",
+            "confirm_password": "NewSecretPassword1!",
+        },
+    )
+    assert reset_res.status_code == 302
+    created_user.refresh_from_db()
+    assert created_user.check_password("NewSecretPassword1!")
+
+    # 6. Admin cannot deactivate self
+    self_deactivate_res = client.post(f"/ui/settings/users/{admin_user.id}/toggle-active/")
+    assert self_deactivate_res.status_code == 302
+    admin_user.refresh_from_db()
+    assert admin_user.is_active is True
+
+    # 7. Non-superuser cannot edit, reset-password, or deactivate superuser
+    assert client.get(f"/ui/settings/users/{superuser.id}/edit/").status_code == 403
+    assert client.get(f"/ui/settings/users/{superuser.id}/reset-password/").status_code == 403
+    assert client.post(f"/ui/settings/users/{superuser.id}/toggle-active/").status_code == 403
+
+    # 8. Deactivate target user
+    deactivate_res = client.post(f"/ui/settings/users/{created_user.id}/toggle-active/")
+    assert deactivate_res.status_code == 302
+    created_user.refresh_from_db()
+    assert created_user.is_active is False
