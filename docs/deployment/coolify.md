@@ -28,7 +28,7 @@ the Coolify application (not in a committed `.env`):
 Optional:
 
     RUN_MIGRATIONS=1        # default 1; set 0 to skip migrations on startup
-    SEED_DEMO_DATA=1        # load demo users/data on first boot
+    SEED_DEMO_DATA=1        # load demo users, roles, and rules on boot (patients opt-in via --with-patients)
     DJANGO_SECURE_SSL_REDIRECT=0   # only if the probe sends no X-Forwarded-Proto
 
 Generate a key with:
@@ -56,6 +56,20 @@ edge proxy to terminate TLS.
     curl -fsS https://dspng.space/api/v1/health/     # {"status":"ok","database":"ok"}
     curl -fsS https://dspng.space/api/v1/schema/     # OpenAPI schema
     # API docs: https://dspng.space/api/v1/docs/
+
+## 5. Managing Synthetic Demo Patient Data
+
+Patient clinical records are not seeded by default during startup. To optionally seed synthetic demo patient records:
+
+```bash
+python manage.py seed_demo --with-patients
+```
+
+To purge already-seeded synthetic patient records (`MRN-DEMO-*`) from the running database while preserving system accounts, roles, and guidelines:
+
+```bash
+python manage.py purge_demo_data --confirm
+```
 
 ## Common failures
 
