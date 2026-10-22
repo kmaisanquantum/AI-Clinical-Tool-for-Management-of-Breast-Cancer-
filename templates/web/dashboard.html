@@ -8,7 +8,7 @@
   <p class="page-subtitle">Breast Cancer Clinical Decision-Support Platform providing automated evidence-based triage, staging, and treatment guidance.</p>
 </div>
 
-<div class="grid-4">
+<div class="grid-3" style="margin-bottom: 1.5rem;">
   <div class="stat-box">
     <div class="stat-val">{{ patient_count }}</div>
     <div class="stat-lbl">Registered Patients</div>
@@ -23,39 +23,41 @@
   </div>
 </div>
 
-<div style="display: flex; gap: 1rem; margin-bottom: 2rem;">
-  <a href="/ui/patients/" class="btn-sm btn-primary" style="padding: 0.75rem 1.25rem; font-size: 1rem;">View Patients Directory &rarr;</a>
-  <a href="/ui/assessments/" class="btn-sm btn-primary" style="padding: 0.75rem 1.25rem; font-size: 1rem; background-color: #0d9488;">View Decision Assessments &rarr;</a>
+<div class="btn-group-mobile" style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+  <a href="/ui/patients/" class="btn btn-primary">View Patients Directory &rarr;</a>
+  <a href="/ui/assessments/" class="btn btn-primary" style="background-color: #0d9488;">View Decision Assessments &rarr;</a>
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+<div class="grid-2">
   <div class="card">
     <div class="card-title">
       <span>Recent Registry Patients</span>
       <a href="/ui/patients/" class="pill" style="text-decoration:none;">All &rarr;</a>
     </div>
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Pseudonym</th>
-          <th>Sex</th>
-          <th>Region</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for p in recent_patients %}
+    <div class="table-responsive">
+      <table>
+        <thead>
           <tr>
-            <td><a href="/ui/patients/{{ p.id }}/">#{{ p.id }}</a></td>
-            <td><code>{{ p.pseudonym_id|slice:":8" }}...</code></td>
-            <td>{{ p.get_sex_display|default:p.sex }}</td>
-            <td>{{ p.region|default:"—" }}</td>
+            <th>ID</th>
+            <th>Pseudonym</th>
+            <th>Sex</th>
+            <th>Region</th>
           </tr>
-        {% empty %}
-          <tr><td colspan="4" style="color:var(--text-muted); text-align:center;">No patients registered yet.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for p in recent_patients %}
+            <tr>
+              <td><a href="/ui/patients/{{ p.id }}/">#{{ p.id }}</a></td>
+              <td><code>{{ p.pseudonym_id|slice:":8" }}...</code></td>
+              <td>{{ p.get_sex_display|default:p.sex }}</td>
+              <td>{{ p.region|default:"—" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" style="color:var(--text-muted); text-align:center;">No patients registered yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 
   <div class="card">
@@ -63,32 +65,34 @@
       <span>Recent Decision Assessments</span>
       <a href="/ui/assessments/" class="pill" style="text-decoration:none;">All &rarr;</a>
     </div>
-    <table>
-      <thead>
-        <tr>
-          <th>ID</th>
-          <th>Triage</th>
-          <th>Patient</th>
-          <th>Calculated</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in recent_assessments %}
+    <div class="table-responsive">
+      <table>
+        <thead>
           <tr>
-            <td><a href="/ui/assessments/{{ a.id }}/">#{{ a.id }}</a></td>
-            <td>
-              <span class="badge-triage badge-{{ a.triage_level|lower }}">
-                {{ a.triage_level }}
-              </span>
-            </td>
-            <td><a href="/ui/patients/{{ a.encounter.patient.id }}/">#{{ a.encounter.patient.id }}</a></td>
-            <td>{{ a.calculated_at|date:"Y-m-d H:i" }}</td>
+            <th>ID</th>
+            <th>Triage</th>
+            <th>Patient</th>
+            <th>Calculated</th>
           </tr>
-        {% empty %}
-          <tr><td colspan="4" style="color:var(--text-muted); text-align:center;">No assessments recorded.</td></tr>
-        {% endfor %}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {% for a in recent_assessments %}
+            <tr>
+              <td><a href="/ui/assessments/{{ a.id }}/">#{{ a.id }}</a></td>
+              <td>
+                <span class="badge-triage badge-{{ a.triage_level|lower }}">
+                  {{ a.triage_level }}
+                </span>
+              </td>
+              <td><a href="/ui/patients/{{ a.encounter.patient.id }}/">#{{ a.encounter.patient.id }}</a></td>
+              <td>{{ a.calculated_at|date:"Y-m-d H:i" }}</td>
+            </tr>
+          {% empty %}
+            <tr><td colspan="4" style="color:var(--text-muted); text-align:center;">No assessments recorded.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
 {% endblock %}

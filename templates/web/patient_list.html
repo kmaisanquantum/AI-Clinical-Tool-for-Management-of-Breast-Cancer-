@@ -3,43 +3,52 @@
 {% block title %}Patients Directory &bull; Breast Cancer CDS{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <h1 class="page-title">Pseudonymous Patient Registry</h1>
-  <p class="page-subtitle">List of pseudonymous patient records in the clinical registry.</p>
+<div class="page-header" style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem;">
+  <div>
+    <h1 class="page-title">Pseudonymous Patient Registry</h1>
+    <p class="page-subtitle">List of pseudonymous patient records in the clinical registry.</p>
+  </div>
+  {% if can_record_clinical %}
+    <div>
+      <a href="/ui/patients/new/" class="btn btn-primary">+ Register New Patient</a>
+    </div>
+  {% endif %}
 </div>
 
 <div class="card">
-  <table>
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Pseudonym ID</th>
-        <th>Year of Birth</th>
-        <th>Sex</th>
-        <th>Region</th>
-        <th>Created</th>
-        <th>Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for p in patients %}
+  <div class="table-responsive">
+    <table>
+      <thead>
         <tr>
-          <td>#{{ p.id }}</td>
-          <td><code>{{ p.pseudonym_id }}</code></td>
-          <td>{{ p.year_of_birth|default:"—" }}</td>
-          <td>{{ p.get_sex_display|default:p.sex }}</td>
-          <td>{{ p.region|default:"—" }}</td>
-          <td>{{ p.created_at|date:"Y-m-d H:i" }}</td>
-          <td><a href="/ui/patients/{{ p.id }}/" class="btn-sm btn-primary">View Record</a></td>
+          <th>ID</th>
+          <th>Pseudonym ID</th>
+          <th>Year of Birth</th>
+          <th>Sex</th>
+          <th>Region</th>
+          <th>Created</th>
+          <th>Action</th>
         </tr>
-      {% empty %}
-        <tr>
-          <td colspan="7" style="text-align:center; color: var(--text-muted); padding: 2rem;">
-            No patient records found. Run <code>python manage.py seed_demo</code> to populate demo data.
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {% for p in patients %}
+          <tr>
+            <td>#{{ p.id }}</td>
+            <td><code>{{ p.pseudonym_id }}</code></td>
+            <td>{{ p.year_of_birth|default:"—" }}</td>
+            <td>{{ p.get_sex_display|default:p.sex }}</td>
+            <td>{{ p.region|default:"—" }}</td>
+            <td>{{ p.created_at|date:"Y-m-d H:i" }}</td>
+            <td><a href="/ui/patients/{{ p.id }}/" class="btn-sm btn-primary">View Record</a></td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center; color: var(--text-muted); padding: 2rem;">
+              No patient records found. Run <code>python manage.py seed_demo</code> to populate demo data.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </div>
 {% endblock %}
