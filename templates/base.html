@@ -349,6 +349,7 @@
       border-radius: 4px;
       font-size: 0.875rem;
       word-break: break-all;
+      overflow-wrap: anywhere;
     }
 
     footer {
@@ -430,8 +431,12 @@
         width: 100%;
       }
 
-      .btn-group-mobile .btn {
+      .btn-group-mobile .btn,
+      .btn-group-mobile .btn-sm,
+      .btn-group-mobile button,
+      .btn-group-mobile a {
         width: 100%;
+        box-sizing: border-box;
       }
     }
   </style>
