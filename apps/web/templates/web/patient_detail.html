@@ -9,22 +9,22 @@
       <a href="/ui/patients/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to Patients Directory</a>
     </div>
     <h1 class="page-title">Patient Record #{{ patient.id }}</h1>
-    <p class="page-subtitle">Pseudonym ID: <code>{{ patient.pseudonym_id }}</code></p>
+    <p class="page-subtitle">Study ID: <code>{{ patient.pseudonym_id }}</code></p>
   </div>
   {% if can_record_clinical %}
     <div>
-      <a href="/ui/patients/{{ patient.id }}/encounters/new/" class="btn-sm btn-primary" style="padding: 0.6rem 1rem; font-size: 0.9rem;">+ New Clinical Encounter</a>
+      <a href="/ui/patients/{{ patient.id }}/encounters/new/" class="btn btn-primary">+ New Clinical Encounter</a>
     </div>
   {% endif %}
 </div>
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+<div class="grid-2">
   <div class="card">
     <div class="card-title">Pseudonymous Record</div>
     <dl class="dl-grid">
       <dt>Patient ID</dt>
       <dd>#{{ patient.id }}</dd>
-      <dt>Pseudonym</dt>
+      <dt>Study ID</dt>
       <dd><code>{{ patient.pseudonym_id }}</code></dd>
       <dt>Year of Birth</dt>
       <dd>{{ patient.year_of_birth|default:"—" }}</dd>
@@ -78,11 +78,11 @@
           <span style="color: var(--text-muted); font-size: 0.85rem; margin-left: 0.5rem;">({{ encounter.encounter_date|date:"Y-m-d H:i" }})</span>
         </div>
         {% if can_record_clinical %}
-          <div style="display: flex; gap: 0.5rem;">
-            <a href="/ui/encounters/{{ encounter.id }}/investigations/" class="btn-sm btn-outline" style="color: var(--primary); border-color: var(--primary);">+ Pathology / Biomarkers / Staging</a>
-            <form method="post" action="/ui/encounters/{{ encounter.id }}/evaluate/" style="display:inline;">
+          <div class="btn-group-mobile" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <a href="/ui/encounters/{{ encounter.id }}/investigations/" class="btn-sm btn-secondary">+ Pathology / Biomarkers / Staging</a>
+            <form method="post" action="/ui/encounters/{{ encounter.id }}/evaluate/" style="display:inline; width: auto;">
               {% csrf_token %}
-              <button type="submit" class="btn-sm btn-primary">Run Triage Assessment &rarr;</button>
+              <button type="submit" class="btn-sm btn-primary" style="width: 100%;">Run Triage Assessment &rarr;</button>
             </form>
           </div>
         {% endif %}
@@ -109,7 +109,7 @@
             <div style="background: white; padding: 0.75rem; border-radius: 4px; border: 1px solid #e2e8f0; margin-bottom: 0.5rem;">
               <strong>Specimen:</strong> {{ h.specimen_type }} | <strong>Type:</strong> {{ h.histological_type }} (Grade {{ h.grade }})
               {% if h.biomarker_data %}
-                <div style="margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #e2e8f0; font-size: 0.9rem;">
+                <div style="margin-top: 0.4rem; padding-top: 0.4rem; border-top: 1px dashed #e2e8f0; font-size: 0.9rem; display: flex; flex-wrap: wrap; gap: 0.3rem;">
                   <span class="pill">ER: {{ h.biomarker_data.er_status|upper }}</span>
                   <span class="pill">PR: {{ h.biomarker_data.pr_status|upper }}</span>
                   <span class="pill">HER2: {{ h.biomarker_data.her2_status|upper }}</span>
@@ -139,7 +139,7 @@
           <h4 style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 0.5rem;">Decision Support Triage Assessments</h4>
           {% for dsa in encounter.dsa_list %}
             <div style="background: white; padding: 0.75rem; border-radius: 4px; border: 1px solid #e2e8f0; margin-bottom: 0.5rem;">
-              <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
                 <span class="badge-triage badge-{{ dsa.triage_level|lower }}">{{ dsa.triage_level }}</span>
                 <a href="/ui/assessments/{{ dsa.id }}/" class="btn-sm btn-primary">Assessment #{{ dsa.id }} Details &rarr;</a>
               </div>

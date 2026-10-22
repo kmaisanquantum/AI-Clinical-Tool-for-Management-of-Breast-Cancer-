@@ -9,7 +9,7 @@
       <a href="/ui/patients/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to Patients Directory</a>
     </div>
     <h1 class="page-title">Patient Record #{{ patient.id }}</h1>
-    <p class="page-subtitle">Pseudonym ID: <code>{{ patient.pseudonym_id }}</code></p>
+    <p class="page-subtitle">Study ID: <code>{{ patient.pseudonym_id }}</code></p>
   </div>
   {% if can_record_clinical %}
     <div>
@@ -24,7 +24,7 @@
     <dl class="dl-grid">
       <dt>Patient ID</dt>
       <dd>#{{ patient.id }}</dd>
-      <dt>Pseudonym</dt>
+      <dt>Study ID</dt>
       <dd><code>{{ patient.pseudonym_id }}</code></dd>
       <dt>Year of Birth</dt>
       <dd>{{ patient.year_of_birth|default:"—" }}</dd>
