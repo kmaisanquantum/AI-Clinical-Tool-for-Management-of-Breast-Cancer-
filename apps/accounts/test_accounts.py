@@ -1,4 +1,5 @@
 import pytest
+from django.core.management import call_command
 from rest_framework.test import APIClient
 
 from apps.accounts.models import Role, RolePermission, User, UserRole
@@ -50,8 +51,6 @@ def test_accounts_api_authenticated(api_client, normal_user):
 
 @pytest.mark.django_db
 def test_create_demo_user_command_idempotent_and_authenticates(client):
-    from django.core.management import call_command
-
     # Run twice to test idempotence
     call_command("create_demo_user", username="doctor", password="doctor", role="Oncologist")
     call_command("create_demo_user", username="doctor", password="doctor", role="Oncologist")
@@ -66,8 +65,6 @@ def test_create_demo_user_command_idempotent_and_authenticates(client):
 
 @pytest.mark.django_db
 def test_create_demo_user_admin_flag():
-    from django.core.management import call_command
-
     call_command("create_demo_user", username="clinician_admin_test", password="pass", role="Oncologist", admin=True)
     user = User.objects.get(username="clinician_admin_test")
     assert user_has_permission(user, "manage_users")
@@ -75,8 +72,6 @@ def test_create_demo_user_admin_flag():
 
 @pytest.mark.django_db
 def test_seed_demo_grants_manage_users_idempotently():
-    from django.core.management import call_command
-
     # First run
     call_command("seed_demo")
     doctor = User.objects.get(username="doctor")
@@ -86,3 +81,24 @@ def test_seed_demo_grants_manage_users_idempotently():
     call_command("seed_demo")
     doctor.refresh_from_db()
     assert user_has_permission(doctor, "manage_users")
+
+
+@pytest.mark.django_db
+def test_seed_demo_data_doctor_password_custom(client):
+    call_command("seed_demo_data", doctor_password="custom_doctor_pass")
+    doctor = User.objects.get(username="doctor")
+    assert doctor.check_password("custom_doctor_pass")
+    assert user_has_permission(doctor, "manage_users")
+
+    login_success = client.login(username="doctor", password="custom_doctor_pass")
+    assert login_success is True
+
+
+@pytest.mark.django_db
+def test_seed_demo_data_warning_printed():
+    import io
+    out = io.StringIO()
+    call_command("seed_demo_data", stdout=out)
+    output = out.getvalue()
+    assert "WARNING" in output
+    assert "demonstration/testing" in output
