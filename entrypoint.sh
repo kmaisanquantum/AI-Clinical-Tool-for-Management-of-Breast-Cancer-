@@ -20,7 +20,7 @@ if [ "${RUN_MIGRATIONS:-1}" = "1" ]; then
 
   # Optional demo data so a fresh deployment has a usable login.
   if [ "$SEED_DEMO_DATA" = "1" ]; then
-    python manage.py seed_demo_data --doctor-password "${DOCTOR_DEMO_PASSWORD:-doctor}" || echo "entrypoint: seed_demo_data failed; continuing" >&2
+    python manage.py seed_demo_data || echo "entrypoint: seed_demo_data failed; continuing" >&2
   fi
 fi
 exec "$@"

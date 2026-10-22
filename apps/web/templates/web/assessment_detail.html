@@ -7,13 +7,13 @@
   <div style="margin-bottom: 0.5rem;">
     <a href="/ui/assessments/" style="text-decoration:none; color: var(--primary); font-weight: 500;">&larr; Back to Assessments</a>
   </div>
-  <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+  <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
     <h1 class="page-title">Decision Assessment #{{ assessment.id }}</h1>
-    <span class="badge-triage badge-{{ assessment.triage_level|lower }}" style="font-size: 1rem; padding: 0.35rem 0.8rem;">
+    <span class="badge-triage badge-{{ assessment.triage_level|lower }}" style="font-size: 0.95rem; padding: 0.35rem 0.8rem;">
       {{ assessment.triage_level }}
     </span>
     {% if assessment.molecular_subtype %}
-      <span class="pill" style="font-size: 0.9rem; padding: 0.35rem 0.7rem; background-color: #0f766e; color: white;">
+      <span class="pill" style="font-size: 0.85rem; padding: 0.35rem 0.7rem; background-color: #0f766e; color: white;">
         Subtype: {{ assessment.molecular_subtype }}
       </span>
     {% endif %}
@@ -54,28 +54,29 @@
 
     <!-- Interactive Clinician Review Submission Form -->
     <div style="background-color: #f1f5f9; padding: 1rem; border-radius: 6px; border: 1px solid var(--border-color);">
-      <h4 style="margin-bottom: 0.5rem; font-size: 0.95rem;">Submit Clinician Review</h4>
-      <form id="review-form">
-        <div style="margin-bottom: 0.75rem;">
-          <label style="font-weight: 600; font-size: 0.85rem;">Decision Support Recommendation:</label>
-          <div style="margin-top: 0.25rem;">
-            <label style="margin-right: 1.5rem; font-weight: 500;">
-              <input type="radio" name="agree_with_recommendation" value="true" checked> Agree / Confirm
+      <h4 style="margin-bottom: 0.75rem; font-size: 1rem; color: var(--text-main);">Submit Clinician Review</h4>
+      <form method="post" action="/ui/assessments/{{ assessment.id }}/review/" id="review-form">
+        {% csrf_token %}
+        <div class="form-group" style="margin-bottom: 1rem;">
+          <label style="font-weight: 600; font-size: 0.9rem; display: block; margin-bottom: 0.5rem;">Decision Support Recommendation:</label>
+          <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <label style="font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; cursor: pointer;">
+              <input type="radio" name="agree_with_recommendation" value="true" checked style="width: 20px; height: 20px;"> Agree / Confirm
             </label>
-            <label style="font-weight: 500;">
-              <input type="radio" name="agree_with_recommendation" value="false"> Disagree / Override
+            <label style="font-weight: 500; display: inline-flex; align-items: center; gap: 0.5rem; min-height: 44px; cursor: pointer;">
+              <input type="radio" name="agree_with_recommendation" value="false" style="width: 20px; height: 20px;"> Disagree / Override
             </label>
           </div>
         </div>
-        <div style="margin-bottom: 0.75rem;">
-          <label for="action_taken" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">Action Taken / Clinical Order:</label>
-          <input type="text" id="action_taken" name="clinician_action_taken" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;" placeholder="e.g. Approved MDT referral to Port Moresby General Hospital">
+        <div class="form-group">
+          <label for="action_taken" style="font-weight: 600; font-size: 0.9rem;">Action Taken / Clinical Order:</label>
+          <input type="text" id="action_taken" name="clinician_action_taken" class="form-control" placeholder="e.g. Approved MDT referral to Port Moresby General Hospital">
         </div>
-        <div style="margin-bottom: 0.75rem;">
-          <label for="notes" style="font-weight: 600; font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">Clinical Notes / Justification:</label>
-          <textarea id="notes" name="notes" rows="2" style="width: 100%; padding: 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px;" placeholder="Optional notes..."></textarea>
+        <div class="form-group">
+          <label for="notes" style="font-weight: 600; font-size: 0.9rem;">Clinical Notes / Justification:</label>
+          <textarea id="notes" name="notes" class="form-control" rows="2" placeholder="Optional notes..."></textarea>
         </div>
-        <button type="submit" class="btn-sm btn-primary">Submit Clinician Review</button>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Clinician Review</button>
       </form>
     </div>
   {% endif %}
@@ -83,7 +84,7 @@
 
 <div class="card">
   <div class="card-title">Recommendation &amp; Referral Summary</div>
-  <p style="font-size: 1.1rem; font-weight: 500; color: var(--text-main); margin-bottom: 1rem;">
+  <p style="font-size: 1.1rem; font-weight: 600; color: var(--text-main); margin-bottom: 1rem;">
     {{ assessment.summary_recommendation }}
   </p>
 
@@ -96,7 +97,7 @@
 
   <dl class="dl-grid">
     <dt>Patient</dt>
-    <dd><a href="/ui/patients/{{ assessment.encounter.patient.id }}/">Patient #{{ assessment.encounter.patient.id }}</a> (Pseudonym: <code>{{ assessment.encounter.patient.pseudonym_id }}</code>)</dd>
+    <dd><a href="/ui/patients/{{ assessment.encounter.patient.id }}/">Patient #{{ assessment.encounter.patient.id }}</a> (Study ID: <code>{{ assessment.encounter.patient.pseudonym_id }}</code>)</dd>
     <dt>Encounter</dt>
     <dd>Encounter #{{ assessment.encounter.id }} ({{ assessment.encounter.encounter_type|title }})</dd>
     <dt>Molecular Subtype</dt>
@@ -108,6 +109,34 @@
     </dd>
   </dl>
 </div>
+
+<!-- AI Suggestion Panel -->
+{% if assessment.ai_suggestion %}
+<div class="card" style="border: 1px solid #6366f1; background-color: #f8fafc;">
+  <div class="card-title" style="color: #4338ca;">
+    <span>🤖 On-Premises AI Secondary Suggestion</span>
+    <span class="pill" style="background: #e0e7ff; color: #3730a3;">{{ assessment.ai_provider_version|default:"On-Premise AI" }}</span>
+  </div>
+  {% if assessment.ai_suggestion.clinical_impression %}
+    <p style="font-size: 0.95rem; margin-bottom: 0.75rem; color: #1e1b4b;">
+      <strong>Clinical Impression:</strong> {{ assessment.ai_suggestion.clinical_impression }}
+    </p>
+  {% endif %}
+  {% if assessment.ai_suggestion.differential_considerations %}
+    <div style="margin-bottom: 0.75rem;">
+      <strong style="font-size: 0.9rem; color: #312e81;">Differential Considerations:</strong>
+      <ul style="padding-left: 1.25rem; font-size: 0.9rem; margin-top: 0.25rem;">
+        {% for item in assessment.ai_suggestion.differential_considerations %}
+          <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+  <p style="font-size: 0.8rem; color: #6366f1; font-style: italic;">
+    Notice: AI recommendations run strictly on local on-premises compute and serve solely as non-binding clinical decision support.
+  </p>
+</div>
+{% endif %}
 
 {% if assessment.management_plan %}
 <div class="card">
@@ -132,7 +161,7 @@
   <div class="card-title">Applied Guidelines &amp; Fired Rules</div>
   {% for rv in rule_versions %}
     <div style="border: 1px solid var(--border-color); border-radius: 6px; padding: 1rem; margin-bottom: 1rem; background-color: #fafafa;">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; gap: 0.5rem;">
         <strong style="font-size: 1.05rem;">
           {% if rv.decision_rule.guideline_version.guideline %}
             {{ rv.decision_rule.guideline_version.guideline.title }} &bull; {{ rv.decision_rule.name }}
@@ -158,43 +187,7 @@
 {% if assessment.reasoning_payload %}
 <div class="card">
   <div class="card-title">Reasoning Payload &amp; Audit Trail</div>
-  <pre style="background: #1e293b; color: #38bdf8; padding: 1rem; border-radius: 6px; font-size: 0.85rem; overflow-x: auto;">{{ assessment.reasoning_payload }}</pre>
+  <pre style="background: #1e293b; color: #38bdf8; padding: 1rem; border-radius: 6px; font-size: 0.85rem; overflow-x: auto; white-space: pre-wrap; word-break: break-all;">{{ assessment.reasoning_payload }}</pre>
 </div>
 {% endif %}
-{% endblock %}
-
-{% block extra_scripts %}
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-  const form = document.getElementById("review-form");
-  if (form) {
-    form.addEventListener("submit", function(e) {
-      e.preventDefault();
-      const agree = form.elements["agree_with_recommendation"].value === "true";
-      const action_taken = form.elements["clinician_action_taken"].value;
-      const notes = form.elements["notes"].value;
-
-      fetch("/api/v1/decision-support/assessments/{{ assessment.id }}/review/", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRFToken": "{{ csrf_token }}"
-        },
-        body: JSON.stringify({
-          agree_with_recommendation: agree,
-          clinician_action_taken: action_taken,
-          notes: notes
-        })
-      })
-      .then(res => {
-        if (res.ok) {
-          window.location.reload();
-        } else {
-          alert("Error submitting review. Please check inputs.");
-        }
-      });
-    });
-  }
-});
-</script>
 {% endblock %}

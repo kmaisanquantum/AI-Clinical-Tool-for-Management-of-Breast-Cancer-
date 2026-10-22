@@ -36,6 +36,7 @@ User = get_user_model()
 DEMO_USERS = [
     ("clinical_admin", "Clinical Admin", ["manage_users", "manage_rules", "view_patient_identity", "record_clinical"]),
     ("doctor", "Oncologist", ["manage_users", "view_patient_identity", "record_clinical"]),
+    ("oncologist", "Oncologist", ["manage_users", "view_patient_identity", "record_clinical"]),
     ("oncologist", "Oncologist", ["view_patient_identity", "record_clinical"]),
     ("registrar", "Registrar", ["record_clinical"]),
     ("analyst", "Analyst", []),
@@ -103,20 +104,16 @@ class Command(BaseCommand):
             help="Password assigned to each seeded demo user.",
         )
         parser.add_argument(
-            "--doctor-password",
-            default="doctor",
-            help="Password assigned specifically to the demo 'doctor' user.",
+            "--with-patients",
+            action="store_true",
+            default=False,
+            help="Optionally seed synthetic demo patient clinical records.",
         )
 
     @transaction.atomic
     def handle(self, *args, **options):
-        self.stdout.write(
-            self.style.WARNING(
-                "WARNING: Seeding demo accounts and synthetic clinical data for demonstration/testing purposes only."
-            )
-        )
         password = options["password"]
-        doctor_password = options.get("doctor_password") or "doctor"
+        with_patients = options.get("with_patients", False)
 
         # 1. Seed MolecularSubtype lookup table
         for name, display_name, desc in SUBTYPES:
@@ -128,13 +125,13 @@ class Command(BaseCommand):
         # 2. Seed Users & Roles
         users = {}
         for username, role_name, permission_codes in DEMO_USERS:
-            pwd = doctor_password if username == "doctor" else password
             user, created = User.objects.get_or_create(
                 username=username,
                 defaults={"email": f"{username}@example.test", "first_name": username.title()},
             )
-            user.set_password(pwd)
-            user.save()
+            if created:
+                user.set_password(password)
+                user.save()
 
             role, _ = Role.objects.get_or_create(
                 name=role_name,
