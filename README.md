@@ -12,7 +12,7 @@ clinical-governance, privacy and regulatory review is complete.
 Web Interface: http://127.0.0.1:8000/
 API docs: http://127.0.0.1:8000/api/v1/docs/
 
-## Creating User Accounts
+## Creating User Accounts & Demo Data
 After deploying (e.g. via Coolify or Docker), create a superuser using the container terminal:
 
 ```bash
@@ -25,10 +25,22 @@ Or create a demo account with a specific username, password, and role:
 python manage.py create_demo_user --username doctor --password doctor
 ```
 
-Or seed synthetic demo data along with demo accounts (`doctor`, `oncologist`, `registrar`, `analyst` with password `DemoPass!2025`):
+Or seed demo accounts (`doctor`, `oncologist`, `registrar`, `analyst` with password `DemoPass!2025`), roles, and guidelines:
 
 ```bash
 python manage.py seed_demo
 ```
 
-See docs/architecture/architecture.md, docs/deployment/nixpacks.md and docs/deployment/vultr.md.
+Optionally include synthetic demo patient records with `--with-patients`:
+
+```bash
+python manage.py seed_demo --with-patients
+```
+
+To purge synthetic demo patient records (`MRN-DEMO-*`) from the running database while preserving system accounts and rules:
+
+```bash
+python manage.py purge_demo_data --confirm
+```
+
+See docs/architecture/architecture.md, docs/deployment/coolify.md, docs/deployment/nixpacks.md and docs/deployment/vultr.md.

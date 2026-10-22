@@ -148,124 +148,125 @@ class Command(BaseCommand):
         author = users["oncologist"]
         seed_example_rules(user=author)
 
-        # 3. Seed Patients & Encounters
-        for spec in PATIENTS:
-            identity = PatientIdentity.objects.filter(national_id_or_mrn=spec["mrn"]).first()
-            if identity:
-                patient = identity.patient
-            else:
-                patient = Patient.objects.create(
-                    year_of_birth=spec["year_of_birth"],
-                    sex=spec["sex"],
-                    region=spec["region"],
-                )
-                PatientIdentity.objects.create(
-                    patient=patient,
-                    full_name=spec["name"],
-                    national_id_or_mrn=spec["mrn"],
-                    phone_number="+675 000 0000",
-                    address=f"{spec['region']}, Papua New Guinea",
-                )
+        # 3. Seed Patients & Encounters (Only if --with-patients is specified)
+        if with_patients:
+            for spec in PATIENTS:
+                identity = PatientIdentity.objects.filter(national_id_or_mrn=spec["mrn"]).first()
+                if identity:
+                    patient = identity.patient
+                else:
+                    patient = Patient.objects.create(
+                        year_of_birth=spec["year_of_birth"],
+                        sex=spec["sex"],
+                        region=spec["region"],
+                    )
+                    PatientIdentity.objects.create(
+                        patient=patient,
+                        full_name=spec["name"],
+                        national_id_or_mrn=spec["mrn"],
+                        phone_number="+675 000 0000",
+                        address=f"{spec['region']}, Papua New Guinea",
+                    )
 
-            encounter = Encounter.objects.filter(patient=patient).first()
-            if not encounter:
-                encounter = Encounter.objects.create(
-                    patient=patient,
-                    encounter_type="diagnostic",
-                    recorded_by=author,
-                    encounter_date=timezone.now(),
-                )
-                assessment = ClinicalAssessment.objects.create(
-                    encounter=encounter,
-                    assessment_type="initial_assessment",
-                    summary_notes=f"Synthetic demonstration encounter for {spec['region']}.",
-                    recorded_by=author,
-                )
-                for symptom_type, duration in spec["symptoms"]:
-                    PresentingSymptom.objects.create(
-                        assessment=assessment,
-                        symptom_type=symptom_type,
-                        duration_weeks=duration,
-                        severity="moderate",
+                encounter = Encounter.objects.filter(patient=patient).first()
+                if not encounter:
+                    encounter = Encounter.objects.create(
+                        patient=patient,
+                        encounter_type="diagnostic",
+                        recorded_by=author,
+                        encounter_date=timezone.now(),
+                    )
+                    assessment = ClinicalAssessment.objects.create(
+                        encounter=encounter,
+                        assessment_type="initial_assessment",
+                        summary_notes=f"Synthetic demonstration encounter for {spec['region']}.",
+                        recorded_by=author,
+                    )
+                    for symptom_type, duration in spec["symptoms"]:
+                        PresentingSymptom.objects.create(
+                            assessment=assessment,
+                            symptom_type=symptom_type,
+                            duration_weeks=duration,
+                            severity="moderate",
+                            recorded_by=author,
+                        )
+
+                    ClinicalNote.objects.create(
+                        encounter=encounter,
+                        note_type="progress_note",
+                        content="Synthetic note. For interface demonstration only.",
                         recorded_by=author,
                     )
 
-                ClinicalNote.objects.create(
-                    encounter=encounter,
-                    note_type="progress_note",
-                    content="Synthetic note. For interface demonstration only.",
-                    recorded_by=author,
-                )
-
-                ImagingReport.objects.create(
-                    encounter=encounter,
-                    modality="ultrasound",
-                    birads_category=spec["birads"],
-                    impression="Synthetic imaging impression.",
-                    recorded_by=author,
-                )
-
-                report = HistopathologyReport.objects.create(
-                    encounter=encounter,
-                    specimen_type="core_needle_biopsy",
-                    histological_type="Invasive ductal carcinoma",
-                    grade="3",
-                    recorded_by=author,
-                )
-
-                if spec["biomarkers"]:
-                    bm = spec["biomarkers"]
-                    BiomarkerResult.objects.create(
-                        histopathology_report=report,
-                        er_status=bm["er"],
-                        pr_status=bm["pr"],
-                        her2_status=bm["her2"],
-                        ki67_index=bm["ki67"],
+                    ImagingReport.objects.create(
+                        encounter=encounter,
+                        modality="ultrasound",
+                        birads_category=spec["birads"],
+                        impression="Synthetic imaging impression.",
                         recorded_by=author,
                     )
 
-                t, n, m, overall = spec["staging"]
-                StagingAssessment.objects.create(
-                    encounter=encounter,
-                    t_stage=t, n_stage=n, m_stage=m, overall_stage=overall,
-                    recorded_by=author,
-                )
-
-                result = evaluate_encounter(encounter)
-                triage = DecisionSupportAssessment.objects.create(
-                    encounter=encounter,
-                    triage_level=result["triage_level"],
-                    summary_recommendation=result["summary_recommendation"],
-                    molecular_subtype=result.get("molecular_subtype", ""),
-                    molecular_subtype_fk=result.get("molecular_subtype_fk"),
-                    incomplete_data=result.get("incomplete_data", False),
-                    management_plan=result.get("management_plan", []),
-                    referral_recommendation=result.get("referral_recommendation", ""),
-                    ai_suggestion=result.get("ai_suggestion", {}),
-                    ai_provider_version=result.get("ai_provider_version", ""),
-                    reasoning_payload=result["reasoning_payload"],
-                )
-
-                for item in result.get("management_plan", []):
-                    ManagementPlan.objects.create(
-                        assessment=triage,
-                        plan_type=item.get("plan_type", "general"),
-                        recommendation_text=item.get("recommendation_text", ""),
-                        requires_referral=item.get("requires_referral", False),
-                        referral_destination=item.get("referral_destination", ""),
-                        timeframe_days=item.get("timeframe_days"),
-                        resource_level=item.get("resource_level", ""),
+                    report = HistopathologyReport.objects.create(
+                        encounter=encounter,
+                        specimen_type="core_needle_biopsy",
+                        histological_type="Invasive ductal carcinoma",
+                        grade="3",
+                        recorded_by=author,
                     )
 
-                if result["matched_rule_versions"]:
-                    triage.rule_versions_applied.set(result["matched_rule_versions"])
+                    if spec["biomarkers"]:
+                        bm = spec["biomarkers"]
+                        BiomarkerResult.objects.create(
+                            histopathology_report=report,
+                            er_status=bm["er"],
+                            pr_status=bm["pr"],
+                            her2_status=bm["her2"],
+                            ki67_index=bm["ki67"],
+                            recorded_by=author,
+                        )
 
-                AuditEvent.objects.create(
-                    user=author,
-                    action="CREATE",
-                    resource_type="Encounter",
-                    resource_id=str(encounter.id),
-                    details={"seeded": True},
-                )
+                    t, n, m, overall = spec["staging"]
+                    StagingAssessment.objects.create(
+                        encounter=encounter,
+                        t_stage=t, n_stage=n, m_stage=m, overall_stage=overall,
+                        recorded_by=author,
+                    )
+
+                    result = evaluate_encounter(encounter)
+                    triage = DecisionSupportAssessment.objects.create(
+                        encounter=encounter,
+                        triage_level=result["triage_level"],
+                        summary_recommendation=result["summary_recommendation"],
+                        molecular_subtype=result.get("molecular_subtype", ""),
+                        molecular_subtype_fk=result.get("molecular_subtype_fk"),
+                        incomplete_data=result.get("incomplete_data", False),
+                        management_plan=result.get("management_plan", []),
+                        referral_recommendation=result.get("referral_recommendation", ""),
+                        ai_suggestion=result.get("ai_suggestion", {}),
+                        ai_provider_version=result.get("ai_provider_version", ""),
+                        reasoning_payload=result["reasoning_payload"],
+                    )
+
+                    for item in result.get("management_plan", []):
+                        ManagementPlan.objects.create(
+                            assessment=triage,
+                            plan_type=item.get("plan_type", "general"),
+                            recommendation_text=item.get("recommendation_text", ""),
+                            requires_referral=item.get("requires_referral", False),
+                            referral_destination=item.get("referral_destination", ""),
+                            timeframe_days=item.get("timeframe_days"),
+                            resource_level=item.get("resource_level", ""),
+                        )
+
+                    if result["matched_rule_versions"]:
+                        triage.rule_versions_applied.set(result["matched_rule_versions"])
+
+                    AuditEvent.objects.create(
+                        user=author,
+                        action="CREATE",
+                        resource_type="Encounter",
+                        resource_id=str(encounter.id),
+                        details={"seeded": True},
+                    )
 
         self.stdout.write(self.style.SUCCESS("Synthetic demo data seeded successfully."))
